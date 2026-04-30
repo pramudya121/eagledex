@@ -120,6 +120,8 @@ interface Web3Ctx {
   nativeBalance: string;
   refreshBalance: () => Promise<void>;
   walletId: WalletId | null;
+  /** Throws a clear Error if the wallet isn't on Integralayer after attempting an auto-switch. */
+  ensureChain: () => Promise<void>;
 }
 
 const Ctx = createContext<Web3Ctx | null>(null);
@@ -177,6 +179,29 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       } else { throw e; }
     }
   }, [walletId]);
+
+  const ensureChain = useCallback(async () => {
+    if (!provider || !signer) throw new Error("Wallet not connected");
+    // Always re-read the live chainId from the provider (state may be stale right after switch)
+    let net = await provider.getNetwork();
+    if (Number(net.chainId) === INTEGRALAYER.chainId) return;
+    try {
+      await switchToIntegralayer();
+    } catch (e: any) {
+      const msg = e?.shortMessage || e?.message || String(e);
+      throw new Error(
+        `Wrong network. Please switch your wallet to ${INTEGRALAYER.name} (chainId ${INTEGRALAYER.chainId}). ${msg}`,
+      );
+    }
+    // Re-check after the switch attempt
+    net = await provider.getNetwork();
+    if (Number(net.chainId) !== INTEGRALAYER.chainId) {
+      throw new Error(
+        `Wallet is still on chain ${Number(net.chainId)}. Approve the switch to ${INTEGRALAYER.name} (chainId ${INTEGRALAYER.chainId}) and try again.`,
+      );
+    }
+    setChainId(INTEGRALAYER.chainId);
+  }, [provider, signer, switchToIntegralayer]);
 
   const connect = useCallback(async (id: WalletId) => {
     let eth: any;
@@ -245,7 +270,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       account, chainId, provider, signer, readProvider, factory, router,
-      connect, disconnect, switchToIntegralayer, isCorrectChain, nativeBalance, refreshBalance, walletId,
+      connect, disconnect, switchToIntegralayer, isCorrectChain, nativeBalance, refreshBalance, walletId, ensureChain,
     }}>
       {children}
     </Ctx.Provider>
