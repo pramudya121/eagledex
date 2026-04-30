@@ -101,7 +101,7 @@ export const WALLETS: { id: WalletId; name: string; popular?: boolean }[] = [
 ];
 
 export function isWalletInstalled(id: WalletId): boolean {
-  if (id === "walletconnect") return WC_AVAILABLE;
+  if (id === "walletconnect") return WC_AVAILABLE; // requires VITE_WC_PROJECT_ID
   return getInjected(id) != null;
 }
 
