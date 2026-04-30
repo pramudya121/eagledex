@@ -40,16 +40,6 @@ const SyncBadge = ({ className = "" }: { className?: string }) => {
           <span className="text-muted-foreground">Synced</span><span>#{s.syncedBlock || "—"}</span>
           <span className="text-muted-foreground">Events</span><span>{s.eventCount}</span>
           <span className="text-muted-foreground">Polls</span><span>{s.pollCount}</span>
-          <span className="text-muted-foreground">Poll every</span><span>{Math.round((s.pollIntervalMs || 0)/1000)}s</span>
-        </div>
-        <div className="mt-1 text-[10px] text-muted-foreground">
-          {src.source === "events"
-            ? "Live RPC events drive updates; polling acts as a safety net."
-            : src.source === "rpc-poll"
-            ? "Subgraph not active — using RPC polling fallback. Interval adapts to activity & tab visibility."
-            : src.source === "cache"
-            ? "Showing cached data while we re-establish a live connection."
-            : "RPC unreachable. Reconnecting…"}
         </div>
       </TooltipContent>
     </Tooltip>

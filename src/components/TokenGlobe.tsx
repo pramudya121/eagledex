@@ -233,16 +233,8 @@ const TokenGlobe = ({ height }: { height?: number }) => {
   return (
     <div
       ref={mountRef}
-      className="w-full h-full bg-transparent"
-      style={{
-        ...(height ? { height } : undefined),
-        // Belt-and-braces: ensure no inherited backdrop/filter/border ever leaks
-        // a panel-like frame around the canvas.
-        background: "transparent",
-        border: "0",
-        boxShadow: "none",
-        backdropFilter: "none",
-      }}
+      className="w-full h-full"
+      style={height ? { height } : undefined}
       aria-hidden
     />
   );

@@ -124,12 +124,7 @@ const Liquidity = () => {
   const needApproveA = !isNative(a) && aIn > 0n && allowA < aIn;
   const needApproveB = !isNative(b) && bIn > 0n && allowB < bIn;
 
-  // Initial liquidity = pair doesn't exist yet OR pair exists but has zero reserves.
-  // In Uniswap V2, calling addLiquidity on a non-existent pair auto-deploys it via the factory,
-  // so users never need a separate "Create Pair" step.
-  const isInitialLiquidityMode =
-    pairAddr === ZeroAddress ||
-    (reserves != null && reserves.totalSupply === 0n);
+  const isInitialLiquidityMode = pairAddr !== ZeroAddress && reserves != null && reserves.totalSupply === 0n;
 
   // live validation
   useEffect(() => {
@@ -157,7 +152,7 @@ const Liquidity = () => {
     if (!signer || !account || !isCorrectChain) return;
     if (validationError || !aAmt || !bAmt) return;
     if (needApproveA || needApproveB) { setGasEst({ ok: true, warning: "Token approval required first — gas will be re-estimated after approve." } as any); return; }
-    // pairAddr === ZeroAddress is fine — router will auto-create the pair.
+    if (pairAddr === ZeroAddress) return;
     let cancelled = false;
     setEstimating(true);
     (async () => {
@@ -258,14 +253,25 @@ const Liquidity = () => {
           r.addLiquidity(a.address, b.address, va.value!, vb.value!, aMin, bMin, account, dl));
       }
       setAAmt(""); setBAmt("");
-      // Refresh pair address after first mint (router may have just deployed it),
-      // then nudge the pool index.
-      try {
-        const fresh = await factory.getPair(wrap(a), wrap(b));
-        setPairAddr(fresh);
-        if (fresh !== ZeroAddress) poolIndex.refreshPair(fresh);
-        else poolIndex.refresh();
-      } catch { poolIndex.refresh(); }
+      poolIndex.refreshPair(pairAddr);
+    } catch {} finally { setBusy(false); }
+  };
+
+  const onCreatePair = async () => {
+    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (a.address.toLowerCase() === b.address.toLowerCase() || wrap(a).toLowerCase() === wrap(b).toLowerCase()) {
+      return toast.error("Cannot create pair with the same token");
+    }
+    setBusy(true);
+    try {
+      const f = new Contract(CONTRACTS.FACTORY, ["function createPair(address,address) returns (address)"], signer);
+      // sendTx already waits for confirmation and surfaces pending/confirmed/failed status in the UI + history
+      await sendTx(`Create pair ${a.symbol}/${b.symbol}`, () => f.createPair(wrap(a), wrap(b)));
+      // Re-read after confirmation
+      const p = await factory.getPair(wrap(a), wrap(b));
+      setPairAddr(p);
+      poolIndex.refresh();
+      toast.success("Pair created — you can now add initial liquidity");
     } catch {} finally { setBusy(false); }
   };
 
@@ -358,7 +364,7 @@ const Liquidity = () => {
                   <span className="font-mono">{Number(formatUnits(reserves.rB, b.decimals)).toLocaleString(undefined,{maximumFractionDigits:4})}</span>
                 </div></>}
               <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/40 truncate">
-                {pairAddr === ZeroAddress ? "Pair will be created automatically on your first add — no extra tx needed." : `Pair: ${pairAddr}`}
+                {pairAddr === ZeroAddress ? "Pair does not exist yet — confirm tx to create it." : `Pair: ${pairAddr}`}
               </div>
             </div>
 
@@ -398,17 +404,17 @@ const Liquidity = () => {
               </div>
             )}
 
-            {(pairAddr === ZeroAddress || (reserves && reserves.totalSupply === 0n)) && (
+            {pairAddr !== ZeroAddress && reserves && reserves.totalSupply === 0n && (
               <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 text-xs flex items-start gap-2 animate-fade-in">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
                 <div>
-                  <div className="font-bold mb-0.5">{pairAddr === ZeroAddress ? "New pair — you mint it." : "This pool is empty."}</div>
+                  <div className="font-bold mb-0.5">This pool is empty.</div>
                   You will be the <span className="font-semibold">first liquidity provider</span> and you set the price.
                   The ratio of {a.symbol}/{b.symbol} you submit becomes the opening price.
                 </div>
               </div>
             )}
-            {(needApproveA || needApproveB) && (
+            {(needApproveA || needApproveB) && pairAddr !== ZeroAddress && (
               <div className="p-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[11px] flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 shrink-0 mt-0.5"/>
                 <span>ERC-20 tokens must be approved to the router once before they can be added to a pool. Approving does <strong>not</strong> move tokens — it only gives permission.</span>
@@ -426,11 +432,13 @@ const Liquidity = () => {
             )}
 
             {/* Pre-flight + soft warnings */}
-            {aAmt && bAmt && !validationError && !needApproveA && !needApproveB && (
+            {pairAddr !== ZeroAddress && aAmt && bAmt && !validationError && (
               <TxPreflight est={gasEst} loading={estimating} symbol="IRL" warnings={softWarnings} />
             )}
 
-            {(needApproveA || needApproveB) ? (
+            {pairAddr === ZeroAddress ? (
+              <Button disabled={busy || !account} onClick={onCreatePair} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : "Create Pair"}</Button>
+            ) : (needApproveA || needApproveB) ? (
               <div className="grid grid-cols-2 gap-2">
                 {needApproveA ? (
                   <Button disabled={busy} onClick={() => onApprove(a)} className="h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : `Approve ${a.symbol}`}</Button>

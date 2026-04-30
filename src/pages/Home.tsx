@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeftRight, Droplets, Layers, BarChart3, Shield, Zap, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
 import TokenGlobe from "@/components/TokenGlobe";
+import { TOKENS } from "@/lib/chain";
 import { usePoolIndex, poolTVL } from "@/lib/poolIndex";
 import { useMemo } from "react";
 
@@ -51,11 +52,23 @@ const Home = () => {
           </div>
         </div>
 
-        {/* 3D Globe — fully borderless. The TokenGlobe canvas is transparent
-            and renders directly on top of the nebula background — no wrappers,
-            no radial overlays that could leave a visible disc. */}
-        <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
-          <TokenGlobe height={undefined as unknown as number} />
+        {/* 3D Globe — borderless, blends into the nebula background.
+            Padding ensures orbits never clip on small viewports. */}
+        <div className="relative px-2 sm:px-6 lg:px-8">
+          {/* radial primary glow that fades into the page background */}
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.28),transparent_65%)] blur-3xl" />
+          <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
+            <TokenGlobe height={undefined as unknown as number} />
+          </div>
+          {/* token symbol legend */}
+          <div className="mt-3 flex flex-wrap gap-2 justify-center">
+            {TOKENS.filter(t => !t.isNative).slice(0, 8).map(t => (
+              <span key={t.symbol} className="chip-premium flex items-center gap-1.5">
+                {t.logo && <img src={t.logo} alt={t.symbol} className="w-3.5 h-3.5 rounded-full" />}
+                {t.symbol}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
