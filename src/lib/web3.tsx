@@ -9,6 +9,39 @@ export type WalletId = "metamask" | "okx" | "rabby" | "bitget" | "coinbase" | "s
 
 type EthereumProvider = any;
 
+// WalletConnect v2 — singleton EIP-1193 provider
+const WC_PROJECT_ID =
+  (import.meta as any).env?.VITE_WC_PROJECT_ID ||
+  // Public fallback project id (rate-limited demo). Replace via env for production.
+  "3fcc6bba6f1de962d911bb5b5c9dba88";
+
+let _wcProvider: any | null = null;
+let _wcInitPromise: Promise<any> | null = null;
+async function getWalletConnectProvider(): Promise<any> {
+  if (_wcProvider) return _wcProvider;
+  if (_wcInitPromise) return _wcInitPromise;
+  _wcInitPromise = (async () => {
+    const mod = await import("@walletconnect/ethereum-provider");
+    const EthereumProvider = (mod as any).EthereumProvider ?? (mod as any).default;
+    const p = await EthereumProvider.init({
+      projectId: WC_PROJECT_ID,
+      chains: [INTEGRALAYER.chainId],
+      optionalChains: [INTEGRALAYER.chainId, 1],
+      showQrModal: true,
+      rpcMap: { [INTEGRALAYER.chainId]: INTEGRALAYER.rpcUrl },
+      metadata: {
+        name: "EAGLEDEX",
+        description: "EAGLEDEX — DEX on Integralayer",
+        url: typeof window !== "undefined" ? window.location.origin : "https://eagledex.app",
+        icons: [typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : ""],
+      },
+    });
+    _wcProvider = p;
+    return p;
+  })();
+  return _wcInitPromise;
+}
+
 function getInjected(id: WalletId): EthereumProvider | null {
   const w = window as any;
   switch (id) {
@@ -43,7 +76,9 @@ function getInjected(id: WalletId): EthereumProvider | null {
       return eth?.isRainbow ? eth : null;
     }
     case "walletconnect":
-      return null; // not yet wired; UI shows install hint
+      // WalletConnect doesn't need an injected provider — it's always "available".
+      // We return a sentinel truthy value so UI treats it as connectable.
+      return _wcProvider ?? ({ __wc: true } as any);
   }
 }
 
@@ -59,6 +94,7 @@ export const WALLETS: { id: WalletId; name: string; popular?: boolean }[] = [
 ];
 
 export function isWalletInstalled(id: WalletId): boolean {
+  if (id === "walletconnect") return true; // always available via QR / mobile deeplink
   return getInjected(id) != null;
 }
 
@@ -108,7 +144,14 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   useEffect(() => { refreshBalance(); }, [refreshBalance, chainId]);
 
   const switchToIntegralayer = useCallback(async () => {
-    const eth = walletId ? getInjected(walletId) : (window as any).ethereum;
+    let eth: any = null;
+    if (walletId === "walletconnect") {
+      eth = _wcProvider;
+    } else if (walletId) {
+      eth = getInjected(walletId);
+    } else {
+      eth = (window as any).ethereum;
+    }
     if (!eth) return;
     try {
       await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: INTEGRALAYER.chainIdHex }] });
@@ -129,13 +172,31 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   }, [walletId]);
 
   const connect = useCallback(async (id: WalletId) => {
-    const eth = getInjected(id);
-    if (!eth) {
-      toast.error(`${id} wallet not detected`, { description: "Please install the extension." });
-      return;
+    let eth: any;
+    if (id === "walletconnect") {
+      try {
+        eth = await getWalletConnectProvider();
+        // Triggers QR modal / deep-link if not already connected
+        if (!eth.session) {
+          await eth.connect();
+        } else {
+          await eth.enable();
+        }
+      } catch (e: any) {
+        toast.error("WalletConnect failed", { description: e?.message ?? String(e) });
+        return;
+      }
+    } else {
+      eth = getInjected(id);
+      if (!eth) {
+        toast.error(`${id} wallet not detected`, { description: "Please install the extension." });
+        return;
+      }
     }
     try {
-      const accs: string[] = await eth.request({ method: "eth_requestAccounts" });
+      const accs: string[] = id === "walletconnect"
+        ? (eth.accounts && eth.accounts.length ? eth.accounts : await eth.request({ method: "eth_requestAccounts" }))
+        : await eth.request({ method: "eth_requestAccounts" });
       const bp = new BrowserProvider(eth, "any");
       const sg = await bp.getSigner();
       const net = await bp.getNetwork();
@@ -149,16 +210,23 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
       eth.on?.("accountsChanged", (a: string[]) => setAccount(a[0] ?? null));
       eth.on?.("chainChanged", (c: string) => setChainId(parseInt(c, 16)));
+      eth.on?.("disconnect", () => {
+        setAccount(null); setSigner(null); setProvider(null); setWalletId(null);
+        localStorage.removeItem("eagledex:wallet");
+      });
       toast.success("Wallet connected", { description: `${accs[0].slice(0,6)}…${accs[0].slice(-4)}` });
     } catch (e: any) {
       toast.error("Connection failed", { description: e?.message ?? String(e) });
     }
   }, [switchToIntegralayer]);
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
+    if (walletId === "walletconnect" && _wcProvider) {
+      try { await _wcProvider.disconnect(); } catch {}
+    }
     setAccount(null); setSigner(null); setProvider(null); setWalletId(null);
     localStorage.removeItem("eagledex:wallet");
-  }, []);
+  }, [walletId]);
 
   // auto reconnect
   useEffect(() => {
