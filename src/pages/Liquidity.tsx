@@ -15,6 +15,7 @@ import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle } from "lucide-
 import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
+import { usePersistedPref } from "@/lib/userPrefs";
 
 const Liquidity = () => {
   const { account, signer, readProvider, factory, isCorrectChain } = useWeb3();
@@ -29,8 +30,8 @@ const Liquidity = () => {
   const [allowA, setAllowA] = useState<bigint>(0n);
   const [allowB, setAllowB] = useState<bigint>(0n);
   const [reserves, setReserves] = useState<{ rA: bigint; rB: bigint; totalSupply: bigint; userLp: bigint } | null>(null);
-  const [slippage, setSlippage] = useState(100); // 1% default
-  const [deadlineM, setDeadlineM] = useState(20);
+  const [slippage, setSlippage] = usePersistedPref("slippageBps", 100); // 1% default for LP
+  const [deadlineM, setDeadlineM] = usePersistedPref("deadlineMin", 20);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [gasEst, setGasEst] = useState<GasEstimate | null>(null);
   const [estimating, setEstimating] = useState(false);
