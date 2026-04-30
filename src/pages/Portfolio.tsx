@@ -3,15 +3,20 @@ import { Link } from "react-router-dom";
 import { useWeb3 } from "@/lib/web3";
 import { Contract, formatUnits } from "ethers";
 import { ERC20_ABI, PAIR_ABI } from "@/lib/abis";
-import { TOKENS, explorerAddr, explorerTx } from "@/lib/chain";
+import { TOKENS, NATIVE_TOKEN, TokenInfo, explorerAddr, explorerTx } from "@/lib/chain";
 import {
   Loader2, Wallet as WalletIcon, ExternalLink, CheckCircle2, XCircle, Clock,
-  Wallet, Layers, Coins, Briefcase, Send, ArrowLeftRight, Droplets, BookOpen, Zap, Copy,
+  Wallet, Layers, Coins, Briefcase, Send, ArrowLeftRight, Droplets, BookOpen, Zap, Copy, PieChart as PieIcon, TrendingUp,
 } from "lucide-react";
 import { usePoolIndex } from "@/lib/poolIndex";
 import { useTxHistory, TxRecord } from "@/lib/txStore";
 import SyncBadge from "@/components/SyncBadge";
 import { toast } from "sonner";
+import SendTokenDialog from "@/components/SendTokenDialog";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+} from "recharts";
 
 interface LPPosition {
   pair: string;
@@ -34,6 +39,8 @@ const Portfolio = () => {
   const [lps, setLps] = useState<LPPosition[]>([]);
   const [loadingBal, setLoadingBal] = useState(false);
   const [loadingLp, setLoadingLp] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendToken, setSendToken] = useState<TokenInfo>(NATIVE_TOKEN);
 
   useEffect(() => {
     if (!account) return;
@@ -90,6 +97,60 @@ const Portfolio = () => {
     txHistory.filter(t => /liquid|pair|approve lp/i.test(t.label)).slice(0, 25),
     [txHistory]);
 
+  // ---- Composition for the donut chart ----
+  const composition = useMemo(() => {
+    const items: { name: string; value: number; color: string; logo?: string }[] = [];
+    const palette = ["hsl(var(--primary))","#a78bfa","#22d3ee","#f59e0b","#ec4899","#10b981","#ef4444","#6366f1"];
+    const native = Number(nativeBalance);
+    if (native > 0) items.push({ name: "IRL", value: native, color: palette[0], logo: NATIVE_TOKEN.logo });
+    balances.forEach((b, i) => {
+      const v = Number(b.bal);
+      if (v > 0) items.push({ name: b.sym, value: v, color: palette[(i + 1) % palette.length], logo: b.logo });
+    });
+    lps.forEach((p, i) => {
+      const v = Number(formatUnits(p.underlying0, p.decimals0)) + Number(formatUnits(p.underlying1, p.decimals1));
+      if (v > 0) items.push({ name: `${p.symbol0}/${p.symbol1} LP`, value: v, color: palette[(i + 3) % palette.length] });
+    });
+    return items.sort((a, b) => b.value - a.value).slice(0, 8);
+  }, [nativeBalance, balances, lps]);
+
+  // ---- Portfolio history series (LP underlying value over time, derived from on-chain price samples) ----
+  const history = useMemo(() => {
+    if (lps.length === 0) return [] as { t: number; value: number; label: string }[];
+    // Build a sorted union of timestamps from each LP's price history
+    const buckets = new Map<number, number>();
+    lps.forEach(lp => {
+      const samples = indexState.priceHistory[lp.pair.toLowerCase()] ?? [];
+      const lpFrac = lp.totalSupply > 0n ? Number(lp.lpBalance) / Number(lp.totalSupply) : 0;
+      // Approximate underlying value at each historical sample using sample.price (token1/token0)
+      // value_t ≈ 2 * reserve0_now * lpFrac (both legs equal at AMM equilibrium → ~2 * one leg)
+      // Since we don't track historical reserves, anchor to current underlying and scale by price ratio.
+      const currentVal = Number(formatUnits(lp.underlying0, lp.decimals0)) + Number(formatUnits(lp.underlying1, lp.decimals1));
+      const lastPrice = samples.length ? samples[samples.length - 1].price : 0;
+      samples.forEach(s => {
+        const ratio = lastPrice > 0 ? s.price / lastPrice : 1;
+        const v = currentVal * (0.5 + 0.5 * ratio); // half is invariant, half tracks price drift
+        buckets.set(s.t, (buckets.get(s.t) ?? 0) + v);
+      });
+      void lpFrac;
+    });
+    const arr = Array.from(buckets.entries())
+      .map(([t, value]) => ({ t, value, label: new Date(t).toLocaleTimeString() }))
+      .sort((a, b) => a.t - b.t);
+    // Keep last 60 points for a clean chart
+    return arr.slice(-60);
+  }, [lps, indexState.priceHistory]);
+
+  const portfolioDelta = useMemo(() => {
+    if (history.length < 2) return null;
+    const first = history[0].value;
+    const last = history[history.length - 1].value;
+    if (first === 0) return null;
+    return ((last - first) / first) * 100;
+  }, [history]);
+
+  const openSend = (t: TokenInfo) => { setSendToken(t); setSendOpen(true); };
+
   if (!account) return (
     <div className="max-w-md mx-auto glass rounded-3xl p-10 text-center mt-20">
       <WalletIcon className="w-12 h-12 mx-auto text-primary mb-4" />
@@ -108,6 +169,8 @@ const Portfolio = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <SendTokenDialog open={sendOpen} onOpenChange={setSendOpen} initialToken={sendToken} />
+
       {/* Hero */}
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-extrabold tracking-tight"><span className="text-grad">Portfolio</span></h1>
@@ -146,6 +209,24 @@ const Portfolio = () => {
             {loadingBal && <Loader2 className="w-4 h-4 animate-spin opacity-60"/>}
           </div>
           <div className="space-y-1">
+            {/* Native row with Send button */}
+            <div className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/40 transition border border-transparent hover:border-primary/30">
+              <div className="flex items-center gap-3 min-w-0">
+                <img src={NATIVE_TOKEN.logo} className="w-9 h-9 rounded-full object-cover bg-secondary"/>
+                <div className="min-w-0">
+                  <div className="font-semibold flex items-center gap-2">{NATIVE_TOKEN.symbol} <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary">native</span></div>
+                  <div className="text-[11px] text-muted-foreground truncate">{NATIVE_TOKEN.name}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="font-mono font-semibold text-sm">{Number(nativeBalance).toLocaleString(undefined,{maximumFractionDigits:4})}</div>
+                </div>
+                <button onClick={() => openSend(NATIVE_TOKEN)} className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary" title="Send">
+                  <Send className="w-3.5 h-3.5"/>
+                </button>
+              </div>
+            </div>
             {balances.map(b => (
               <div key={b.addr} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/40 transition border border-transparent hover:border-primary/30">
                 <div className="flex items-center gap-3 min-w-0">
@@ -155,11 +236,25 @@ const Portfolio = () => {
                     <div className="text-[11px] text-muted-foreground truncate">{b.name}</div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-mono font-semibold text-sm">{Number(b.bal).toLocaleString(undefined,{maximumFractionDigits:4})}</div>
-                  <a href={explorerAddr(b.addr)} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-0.5">
-                    {b.addr.slice(0,6)}…{b.addr.slice(-4)} <ExternalLink className="w-2.5 h-2.5"/>
-                  </a>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <div className="font-mono font-semibold text-sm">{Number(b.bal).toLocaleString(undefined,{maximumFractionDigits:4})}</div>
+                    <a href={explorerAddr(b.addr)} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-0.5">
+                      {b.addr.slice(0,6)}…{b.addr.slice(-4)} <ExternalLink className="w-2.5 h-2.5"/>
+                    </a>
+                  </div>
+                  {Number(b.bal) > 0 && (
+                    <button
+                      onClick={() => {
+                        const tk = TOKENS.find(t => t.address === b.addr);
+                        if (tk) openSend(tk);
+                      }}
+                      className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                      title="Send"
+                    >
+                      <Send className="w-3.5 h-3.5"/>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -175,10 +270,91 @@ const Portfolio = () => {
             <ActionLink to="/liquidity" icon={Droplets}       label="Add Liquidity" />
             <ActionLink to="/pools"     icon={Layers}         label="View Pools" />
             <ActionLink to="/docs"      icon={BookOpen}       label="Docs" />
+            <button onClick={() => openSend(NATIVE_TOKEN)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/40 hover:bg-secondary/70 border border-border text-sm font-semibold">
+              <Send className="w-4 h-4 text-primary"/> Send Token
+            </button>
             <button onClick={copyAddr} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/40 hover:bg-secondary/70 border border-border text-sm font-medium">
-              <Send className="w-4 h-4 text-primary"/> Copy Address
+              <Copy className="w-4 h-4 text-primary"/> Copy Address
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Charts: composition + history */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="glass rounded-2xl p-5">
+          <h2 className="font-bold mb-2 flex items-center gap-2"><PieIcon className="w-4 h-4 text-primary"/> Portfolio Composition</h2>
+          {composition.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">No assets to chart</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-4 items-center">
+              <div className="h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={composition} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75} paddingAngle={2} stroke="hsl(var(--background))">
+                      {composition.map((c, i) => <Cell key={i} fill={c.color} />)}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      formatter={(v: any, n: any) => [Number(v).toLocaleString(undefined,{maximumFractionDigits:4}), n]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <ul className="space-y-1.5 text-xs">
+                {composition.map((c, i) => {
+                  const total = composition.reduce((a, x) => a + x.value, 0) || 1;
+                  const pct = (c.value / total) * 100;
+                  return (
+                    <li key={i} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: c.color }} />
+                        <span className="font-semibold truncate">{c.name}</span>
+                      </div>
+                      <span className="font-mono text-muted-foreground">{pct.toFixed(1)}%</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="glass rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary"/> Portfolio Trend</h2>
+            {portfolioDelta !== null && (
+              <span className={`text-xs font-bold font-mono ${portfolioDelta >= 0 ? "text-[hsl(var(--success))]" : "text-destructive"}`}>
+                {portfolioDelta >= 0 ? "+" : ""}{portfolioDelta.toFixed(2)}%
+              </span>
+            )}
+          </div>
+          {history.length < 2 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">
+              Trend will appear after a few on-chain price updates on your LP pools.
+            </p>
+          ) : (
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={history} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="pfGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3}/>
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={40} domain={["auto","auto"]} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                    formatter={(v: any) => [Number(v).toLocaleString(undefined,{maximumFractionDigits:4}), "Value"]}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#pfGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,9 +1,20 @@
 import { toast } from "sonner";
 import { explorerTx } from "./chain";
 import { txStore } from "./txStore";
+import { ensureChainGlobal } from "./web3";
 
 export async function sendTx<T extends { hash: string; wait: () => Promise<any> }>(label: string, fn: () => Promise<T>) {
   const id = `tx-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  // Stage 0: ensure correct chain. We do this BEFORE creating any toast so the
+  // user sees a single clear error if they're on the wrong network, instead of
+  // a confusing "pending → failed" flow.
+  try {
+    await ensureChainGlobal();
+  } catch (e: any) {
+    const msg = e?.shortMessage || e?.message || String(e);
+    toast.error("Wrong network", { description: msg });
+    throw e;
+  }
   // Stage 1: awaiting wallet signature
   txStore.add({ id, label, status: "pending" });
   toast.loading(`${label}: confirm in wallet…`, { id });
