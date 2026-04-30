@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
+import { usePersistedPref } from "@/lib/userPrefs";
 
 const Swap = () => {
   const { account, signer, readProvider, router, isCorrectChain } = useWeb3();
@@ -26,8 +27,8 @@ const Swap = () => {
   const [balOut, setBalOut] = useState("0");
   const [quoting, setQuoting] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [slippage, setSlippage] = useState(50); // bps = 0.5%
-  const [deadlineM, setDeadlineM] = useState(20); // minutes
+  const [slippage, setSlippage] = usePersistedPref("slippageBps", 50); // bps = 0.5%
+  const [deadlineM, setDeadlineM] = usePersistedPref("deadlineMin", 20); // minutes
   const [showSettings, setShowSettings] = useState(false);
   const [noPair, setNoPair] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
