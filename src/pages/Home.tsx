@@ -58,7 +58,7 @@ const Home = () => {
           {/* radial primary glow that fades into the page background */}
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.28),transparent_65%)] blur-3xl" />
           <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
-            <TokenGlobeResponsive />
+            <TokenGlobe height={undefined as unknown as number} />
           </div>
           {/* token symbol legend */}
           <div className="mt-3 flex flex-wrap gap-2 justify-center">
