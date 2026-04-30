@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, History, Map, HelpCircle, ChevronRight, Lightbulb,
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import { CONTRACTS, INTEGRALAYER, explorerAddr } from "@/lib/chain";
+import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS } from "@/lib/chain";
 
 /* ---------- Sidebar config (mirrors the reference layout) ---------- */
 type NavItem = { id: string; label: string; icon: any };
@@ -66,14 +66,16 @@ const ROADMAP: Phase[] = [
     "Multi-wallet support: MetaMask, OKX, Rabby, Bitget",
     "Constant-product pools with x · y = k",
   ]},
-  { phase: "Phase 2", title: "Trading UX — Swap, Liquidity, Indexing", status: "in_progress", items: [
+  { phase: "Phase 2", title: "Trading UX — Swap, Liquidity, Indexing", status: "done", items: [
     "Premium SPA: Swap, Liquidity, Pools, Analytics, Portfolio",
     "Live on-chain pool indexer (Sync/Swap/Mint/Burn subscriptions)",
     "Adaptive RPC fallback when subgraph is unavailable",
     "Gas pre-flight + revert reason surfaced in the UI",
     "Persistent transaction history with pending / confirmed / failed states",
+    "Premium multi-wallet connect dialog (MetaMask, Rabby, OKX, Bitget, SubWallet, Coinbase, Rainbow, WalletConnect)",
+    "Token registry with verified logos & contract addresses (XRP, ETH, BNB, UNI, HYPE, EGDX, IRL/WIRL)",
   ]},
-  { phase: "Phase 3", title: "Growth — Incentives & Analytics", status: "todo", items: [
+  { phase: "Phase 3", title: "Growth — Incentives & Analytics", status: "in_progress", items: [
     "Liquidity mining with EGDX rewards",
     "Pool-level fee tier governance",
     "Historical TVL/volume charts (7d, 30d, all-time)",
@@ -392,10 +394,42 @@ const Docs = () => {
 
           <Section id="tokens" kicker="Technical" title="Supported tokens">
             <p>
-              EAGLEDEX is permissionless — any ERC-20 can be paired. The default registry includes IRL, WIRL,
-              EGDX, USDT, USDC, ETH, BTC, SOL, BNB, XRP and more. You can also import any custom token by
-              address from the token picker.
+              EAGLEDEX is permissionless — any ERC-20 can be paired. Below is the default registry deployed on{" "}
+              <span className="text-foreground font-semibold">{INTEGRALAYER.name}</span>. You can also import
+              any custom token by address from the token picker.
             </p>
+            <div className="glass rounded-2xl divide-y divide-border/40 overflow-hidden">
+              <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.2fr_2fr_auto] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-bold bg-secondary/30">
+                <span>Token</span>
+                <span className="hidden sm:block">Contract</span>
+                <span className="text-right">Explorer</span>
+              </div>
+              {TOKENS.map(t => (
+                <div key={t.symbol} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.2fr_2fr_auto] gap-3 items-center px-4 py-3 hover:bg-secondary/40 transition">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img src={t.logo} alt={t.symbol} className="w-8 h-8 rounded-full object-cover bg-card shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-bold text-foreground text-sm flex items-center gap-1.5">
+                        {t.symbol}
+                        {t.isNative && <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-bold uppercase">Native</span>}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">{t.name}</div>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block font-mono text-[11px] text-muted-foreground truncate">
+                    {t.isNative ? "— native gas token —" : t.address}
+                  </div>
+                  {t.isNative ? (
+                    <span className="text-[11px] text-muted-foreground text-right">—</span>
+                  ) : (
+                    <a href={explorerAddr(t.address)} target="_blank" rel="noreferrer"
+                      className="text-primary text-[11px] font-semibold hover:underline whitespace-nowrap text-right">
+                      View ↗
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
           </Section>
 
           {/* Roadmap */}

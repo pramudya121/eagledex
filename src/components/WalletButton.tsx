@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWeb3, WALLETS, WalletId } from "@/lib/web3";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useWeb3, WALLETS, WalletId, isWalletInstalled } from "@/lib/web3";
 import { INTEGRALAYER, explorerAddr } from "@/lib/chain";
-import { ExternalLink, LogOut, AlertTriangle, Wallet } from "lucide-react";
+import { ExternalLink, LogOut, AlertTriangle, Wallet, X, Home, Sparkles } from "lucide-react";
+import { WALLET_ICON } from "./WalletIcons";
 
 const short = (a: string) => `${a.slice(0,6)}…${a.slice(-4)}`;
 
@@ -12,27 +13,130 @@ const WalletButton = () => {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
 
-  const onPick = async (id: WalletId) => { await connect(id); setOpen(false); };
+  const onPick = async (id: WalletId) => {
+    if (id === "walletconnect" && !isWalletInstalled(id)) {
+      window.open("https://walletconnect.com/", "_blank", "noopener");
+      return;
+    }
+    await connect(id);
+    setOpen(false);
+  };
 
   if (!account) {
+    const installed = WALLETS.filter(w => isWalletInstalled(w.id));
+    const popular = WALLETS.filter(w => !isWalletInstalled(w.id));
+
     return (
       <>
         <Button onClick={() => setOpen(true)} className="btn-primary-grad text-primary-foreground font-semibold rounded-xl">
           <Wallet className="w-4 h-4 mr-2" /> Connect Wallet
         </Button>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="glass max-w-md">
-            <DialogHeader><DialogTitle className="text-xl">Connect a wallet</DialogTitle></DialogHeader>
-            <div className="grid gap-2 mt-2">
-              {WALLETS.map(w => (
-                <button key={w.id} onClick={() => onPick(w.id)}
-                  className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/60 hover:bg-primary/5 transition-all text-left">
-                  <span className="text-2xl">{w.icon}</span>
-                  <span className="font-semibold">{w.name}</span>
+          <DialogContent
+            className="p-0 max-w-3xl border-0 bg-transparent shadow-none [&>button]:hidden"
+          >
+            <div className="grid sm:grid-cols-[300px_1fr] rounded-3xl overflow-hidden border border-border/60 shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.5)] bg-[hsl(var(--background))]">
+              {/* ===== LEFT — wallet list ===== */}
+              <div className="bg-[hsl(var(--background))] p-5 border-r border-border/60 max-h-[70vh] overflow-y-auto">
+                <h2 className="text-lg font-extrabold mb-4">Connect Wallet</h2>
+
+                {installed.length > 0 && (
+                  <>
+                    <div className="text-xs font-bold text-primary mb-2">Installed</div>
+                    <ul className="space-y-1 mb-4">
+                      {installed.map(w => {
+                        const Icon = WALLET_ICON[w.id];
+                        return (
+                          <li key={w.id}>
+                            <button onClick={() => onPick(w.id)}
+                              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-primary/10 transition text-left">
+                              <Icon />
+                              <span className="font-bold text-sm">{w.name}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+
+                {popular.length > 0 && (
+                  <>
+                    <div className="text-xs font-bold text-muted-foreground mb-2">Popular</div>
+                    <ul className="space-y-1">
+                      {popular.map(w => {
+                        const Icon = WALLET_ICON[w.id];
+                        return (
+                          <li key={w.id}>
+                            <button onClick={() => onPick(w.id)}
+                              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-primary/10 transition text-left">
+                              <Icon />
+                              <span className="font-bold text-sm">{w.name}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+
+                <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+                  All actions are signed and broadcast to {INTEGRALAYER.name}.
+                </p>
+              </div>
+
+              {/* ===== RIGHT — educational panel ===== */}
+              <div className="relative bg-secondary/30 p-7">
+                <button
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  className="absolute top-4 right-4 w-9 h-9 grid place-items-center rounded-full bg-card hover:bg-secondary transition border border-border"
+                >
+                  <X className="w-4 h-4" />
                 </button>
-              ))}
+
+                <h3 className="text-center font-extrabold text-lg mb-6 mt-2">What is a Wallet?</h3>
+
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl btn-primary-grad grid place-items-center text-primary-foreground shrink-0">
+                      <Home className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold mb-1">A Home for your Digital Assets</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Wallets are used to send, receive, store, and display digital assets like
+                        Ethereum, ERC-20 tokens, and NFTs.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 grid place-items-center text-white shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold mb-1">A New Way to Sign In</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Instead of creating new accounts and passwords on every website, just
+                        connect your wallet — one identity, every dApp.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex flex-col items-center gap-2">
+                  <a href="https://ethereum.org/en/wallets/find-wallet/" target="_blank" rel="noreferrer"
+                    className="px-6 py-2.5 rounded-full btn-primary-grad text-primary-foreground font-bold text-sm">
+                    Get a Wallet
+                  </a>
+                  <a href="https://ethereum.org/en/wallets/" target="_blank" rel="noreferrer"
+                    className="text-xs text-primary font-semibold hover:underline">
+                    Learn More
+                  </a>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">All actions are signed and broadcast to {INTEGRALAYER.name}.</p>
           </DialogContent>
         </Dialog>
       </>
