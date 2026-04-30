@@ -15,7 +15,6 @@ import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle } from "lucide-
 import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
-import { NATIVE_TOKEN } from "@/lib/chain";
 
 const Liquidity = () => {
   const { account, signer, readProvider, factory, isCorrectChain } = useWeb3();
