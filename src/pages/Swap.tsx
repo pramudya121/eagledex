@@ -229,14 +229,25 @@ const Swap = () => {
   return (
     <div className="max-w-md mx-auto animate-slide-up">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight">Swap</h1>
-        <p className="text-sm text-muted-foreground mt-1">Trade tokens at the best on-chain rate</p>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          Best on-chain rate
+        </div>
+        <h1 className="text-4xl font-extrabold tracking-tight">
+          <span className="text-grad">Swap</span> tokens
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1.5">Multi-hop routing · MEV-aware slippage · 0 hidden fees</p>
       </div>
 
-      <div className="form-surface p-5 relative">
+      {/* Premium gradient ring around the swap surface */}
+      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)]">
+        <div className="form-surface p-5 relative rounded-[calc(1.5rem-1.5px)]">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Trade</div>
-          <button onClick={() => setShowSettings(v => !v)} className="p-2 rounded-lg hover:bg-secondary">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-muted-foreground">Trade</span>
+            <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/30 text-primary text-[9px] font-bold uppercase tracking-wider">v2 AMM</span>
+          </div>
+          <button onClick={() => setShowSettings(v => !v)} className="p-2 rounded-lg hover:bg-secondary border border-transparent hover:border-border transition" aria-label="Settings">
             <Settings className="w-4 h-4" />
           </button>
         </div>
@@ -275,33 +286,37 @@ const Swap = () => {
         )}
 
         {/* From */}
-        <div className="form-field p-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span>From</span>
-            <button onClick={() => setAmountIn(balIn)} className="hover:text-primary">Balance: {Number(balIn).toFixed(4)}</button>
+        <div className="form-field p-4 transition hover:border-primary/40">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-muted-foreground">You pay</span>
+            <button onClick={() => setAmountIn(balIn)} className="text-xs text-muted-foreground hover:text-primary transition">
+              Balance <span className="font-mono font-semibold text-foreground">{Number(balIn).toFixed(4)}</span>
+              <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/15 text-primary">MAX</span>
+            </button>
           </div>
           <div className="flex items-center gap-2">
             <Input type="number" placeholder="0.0" value={amountIn} onChange={e => setAmountIn(e.target.value)}
-              className="border-0 bg-transparent text-2xl font-bold p-0 h-auto focus-visible:ring-0" />
+              className="border-0 bg-transparent text-3xl font-extrabold tracking-tight p-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/40" />
             <TokenSelect value={tokenIn} onChange={setTokenIn} exclude={tokenOut.address} />
           </div>
         </div>
 
-        <div className="flex justify-center -my-2 relative z-10">
-          <button onClick={flip} className="p-2 rounded-xl bg-card border border-border hover:border-primary hover:rotate-180 transition-all duration-300">
+        <div className="flex justify-center -my-2.5 relative z-10">
+          <button onClick={flip} aria-label="Flip"
+            className="w-9 h-9 grid place-items-center rounded-xl bg-card border-2 border-background ring-1 ring-border hover:ring-primary hover:text-primary hover:rotate-180 transition-all duration-300">
             <ArrowDown className="w-4 h-4" />
           </button>
         </div>
 
         {/* To */}
-        <div className="form-field p-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span>To (estimated)</span>
-            <span>Balance: {Number(balOut).toFixed(4)}</span>
+        <div className="form-field p-4 transition hover:border-primary/40">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-muted-foreground">You receive <span className="opacity-60 normal-case tracking-normal font-medium">(est.)</span></span>
+            <span className="text-xs text-muted-foreground">Balance <span className="font-mono font-semibold text-foreground">{Number(balOut).toFixed(4)}</span></span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 text-2xl font-bold flex items-center">
-              {quoting ? <Loader2 className="w-5 h-5 animate-spin opacity-60" /> : (amountOut ? Number(amountOut).toFixed(6) : "0.0")}
+            <div className="flex-1 text-3xl font-extrabold tracking-tight flex items-center text-foreground/95">
+              {quoting ? <Loader2 className="w-5 h-5 animate-spin opacity-60" /> : (amountOut ? Number(amountOut).toFixed(6) : <span className="opacity-40">0.0</span>)}
             </div>
             <TokenSelect value={tokenOut} onChange={setTokenOut} exclude={tokenIn.address} />
           </div>
@@ -314,15 +329,15 @@ const Swap = () => {
           </div>
         )}
         {!isWrapMode && price !== null && (
-          <div className="mt-3 px-2 text-xs text-muted-foreground flex justify-between animate-fade-in">
-            <span>Rate</span>
-            <span>1 {tokenIn.symbol} ≈ {price.toFixed(6)} {tokenOut.symbol}</span>
-          </div>
-        )}
-        {!isWrapMode && price !== null && (
-          <div className="px-2 text-xs text-muted-foreground flex justify-between">
-            <span>Min received</span>
-            <span>{(Number(amountOut) * (1 - slippage/10000)).toFixed(6)} {tokenOut.symbol}</span>
+          <div className="mt-3 rounded-xl form-field-inset p-3 space-y-1.5 text-xs animate-fade-in">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Rate</span>
+              <span className="font-mono font-semibold">1 {tokenIn.symbol} ≈ {price.toFixed(6)} {tokenOut.symbol}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Min received <span className="opacity-70">({(slippage/100).toFixed(2)}% slip)</span></span>
+              <span className="font-mono font-semibold">{(Number(amountOut) * (1 - slippage/10000)).toFixed(6)} {tokenOut.symbol}</span>
+            </div>
           </div>
         )}
         {!isWrapMode && route && (() => {
@@ -434,7 +449,7 @@ const Swap = () => {
 
         <Button disabled={!account || busy || !amountIn || quoting || !!validationError || (!isWrapMode && noPair) || (!isWrapMode && (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact) || (gasEst?.ok === false)}
           onClick={onSwap}
-          className="w-full mt-4 h-14 text-base font-bold rounded-2xl btn-primary-grad text-primary-foreground disabled:opacity-50">
+          className="w-full mt-4 h-14 text-base font-bold rounded-2xl btn-primary-grad text-primary-foreground disabled:opacity-50 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] hover:shadow-[0_14px_40px_-10px_hsl(var(--primary)/0.8)] transition-shadow">
           {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
             : !account ? "Connect Wallet"
             : insufficient ? `Insufficient ${tokenIn.symbol}`
@@ -445,6 +460,7 @@ const Swap = () => {
             : (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact ? "Confirm high impact"
             : <><Zap className="w-4 h-4 mr-2" /> Swap</>}
         </Button>
+      </div>
       </div>
     </div>
   );
