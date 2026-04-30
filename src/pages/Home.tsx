@@ -51,11 +51,14 @@ const Home = () => {
           </div>
         </div>
 
-        {/* 3D Globe — fully borderless. The TokenGlobe canvas is transparent
-            and renders directly on top of the nebula background — no wrappers,
-            no radial overlays that could leave a visible disc. */}
-        <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
-          <TokenGlobe height={undefined as unknown as number} />
+        {/* 3D Globe — borderless, blends into the nebula background.
+            Padding ensures orbits never clip on small viewports. */}
+        <div className="relative px-2 sm:px-6 lg:px-8">
+          {/* radial primary glow that fades into the page background */}
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.28),transparent_65%)] blur-3xl" />
+          <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
+            <TokenGlobe height={undefined as unknown as number} />
+          </div>
         </div>
       </section>
 

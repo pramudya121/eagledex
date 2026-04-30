@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatUnits } from "ethers";
-import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3, Droplets, Sparkles } from "lucide-react";
+import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3 } from "lucide-react";
 import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolIndex, IndexedPool } from "@/lib/poolIndex";
@@ -96,33 +96,10 @@ const Pools = () => {
       {loading ? (
         <div className="grid place-items-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : !pools.length ? (
-        q ? (
-          <div className="glass rounded-3xl p-12 text-center">
-            <Search className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-            <p className="font-semibold mb-1">No pools match “{q}”</p>
-            <p className="text-xs text-muted-foreground mb-4">Try another token symbol or clear the search.</p>
-            <button onClick={() => setQ("")} className="px-4 py-2 rounded-xl bg-card border border-border hover:border-primary text-xs font-bold">Clear search</button>
-          </div>
-        ) : (
-          // True empty state — no pools indexed at all yet.
-          <div className="rounded-3xl p-10 text-center bg-gradient-to-br from-primary/15 via-card to-transparent border border-primary/20">
-            <div className="w-16 h-16 mx-auto rounded-2xl btn-primary-grad grid place-items-center mb-4 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)]">
-              <Droplets className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <h3 className="text-2xl font-extrabold tracking-tight mb-1">Be the first liquidity provider</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-5">
-              No pools have been indexed yet. Open the Liquidity page, choose two tokens, approve them once, then add liquidity — the pair is created automatically on your first deposit.
-            </p>
-            <ol className="text-xs text-left max-w-md mx-auto mb-5 space-y-2">
-              <Step n={1} title="Pick two tokens" desc="Native IRL pairs use addLiquidityETH; ERC-20 pairs use addLiquidity." />
-              <Step n={2} title="Approve (once)" desc="ERC-20 tokens need router approval before they can be deposited. Native IRL skips approval." />
-              <Step n={3} title="Add liquidity" desc="The router auto-deploys the pair contract during the same tx. No 'Create pair' step." />
-            </ol>
-            <Link to="/liquidity" className="btn-primary-grad text-primary-foreground rounded-2xl px-6 h-12 inline-flex items-center gap-2 font-bold">
-              <Sparkles className="w-4 h-4" /> Open Liquidity
-            </Link>
-          </div>
-        )
+        <div className="glass rounded-3xl p-12 text-center">
+          <Layers className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+          <p className="text-muted-foreground">No pools match your search.</p>
+        </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pools.map(p => <PoolCard key={p.pair} p={p} />)}
@@ -131,16 +108,6 @@ const Pools = () => {
     </div>
   );
 };
-
-const Step = ({ n, title, desc }: { n: number; title: string; desc: string }) => (
-  <li className="flex gap-3 p-2.5 rounded-xl bg-card border border-border/60">
-    <div className="w-6 h-6 rounded-full btn-primary-grad text-primary-foreground grid place-items-center text-[11px] font-bold shrink-0">{n}</div>
-    <div className="min-w-0">
-      <div className="font-bold text-foreground">{title}</div>
-      <div className="text-muted-foreground text-[11px]">{desc}</div>
-    </div>
-  </li>
-);
 
 const MiniStat = ({ icon: Icon, label, value }: any) => (
   <div className="glass rounded-xl p-3 flex items-center gap-3">

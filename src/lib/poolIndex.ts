@@ -68,9 +68,6 @@ interface State {
   lastPollAt: number;       // timestamp of last successful RPC poll
   eventCount: number;       // count of live events received this session
   pollCount: number;        // count of RPC polls performed this session
-  // Adaptive polling
-  pollIntervalMs: number;   // current interval — adapts to tab visibility & event freshness
-  nextPollAt: number;       // timestamp of next scheduled poll
 }
 
 // ---- Persistence -----------------------------------------------------------
@@ -138,8 +135,6 @@ const state: State = {
   lastPollAt: 0,
   eventCount: 0,
   pollCount: 0,
-  pollIntervalMs: 15_000,
-  nextPollAt: 0,
 };
 
 let listeners: Array<(s: State) => void> = [];
@@ -364,63 +359,24 @@ export function bootIndexer(p: JsonRpcProvider) {
   Object.keys(state.pools).forEach(addr => loadPair(addr));
 
   discover().finally(() => { state.initializing = false; emit(); });
-
-  // ---- Adaptive polling ----
-  // Interval rules (all values empirical, easy to tune):
-  //   • tab hidden                            → 60_000  (battery / RPC friendly)
-  //   • events flowing (≤30s since last)       → 20_000  (events are primary, poll = safety net)
-  //   • event-stale (RPC fallback) & visible   →  6_000  (poll IS the source — keep data fresh)
-  //   • RPC currently failing                  →  3_000  (back off via failure count below)
-  // We schedule via setTimeout so each tick can pick a new interval.
-  let consecutiveFailures = 0;
-  const computeInterval = () => {
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return 60_000;
-    if (consecutiveFailures > 0) {
-      // Exponential back-off, capped at 30s
-      return Math.min(30_000, 3_000 * Math.pow(2, consecutiveFailures - 1));
-    }
-    const eventStale = !state.lastEventAt || Date.now() - state.lastEventAt > 30_000;
-    if (eventStale) return 6_000;
-    return 20_000;
-  };
-
-  const tick = async () => {
+  // Periodic head-block + reserve refresh fallback (in case ws/event delivery misses)
+  pollTimer = setInterval(async () => {
     try {
       const h = await p.getBlockNumber();
       state.headBlock = h;
       if (state.syncedBlock === 0) state.syncedBlock = h;
       state.rpcOk = true;
-      consecutiveFailures = 0;
       state.pollCount++;
       state.lastPollAt = Date.now();
+      // If we haven't received a live event in 30s, declare we're on the polling fallback path.
       const eventStale = !state.lastEventAt || Date.now() - state.lastEventAt > 30_000;
-      if (eventStale) state.source = "rpc-poll";
-    } catch {
-      state.rpcOk = false;
-      consecutiveFailures++;
-    }
-    try { await discover(); } catch {}
-    try { Object.keys(state.pools).forEach(refreshPair); } catch {}
-
-    state.pollIntervalMs = computeInterval();
-    state.nextPollAt = Date.now() + state.pollIntervalMs;
+      if (eventStale && state.source !== "events") state.source = "rpc-poll";
+      else if (eventStale) state.source = "rpc-poll";
+    } catch { state.rpcOk = false; }
+    discover();
+    Object.keys(state.pools).forEach(refreshPair);
     emit();
-    pollTimer = setTimeout(tick, state.pollIntervalMs);
-  };
-  state.pollIntervalMs = computeInterval();
-  state.nextPollAt = Date.now() + state.pollIntervalMs;
-  pollTimer = setTimeout(tick, state.pollIntervalMs);
-
-  // React immediately when the tab becomes visible again — users coming back
-  // expect fresh data without waiting for the next interval boundary.
-  if (typeof document !== "undefined") {
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        clearTimeout(pollTimer);
-        tick();
-      }
-    });
-  }
+  }, 15_000);
 }
 
 // Sync status helper
