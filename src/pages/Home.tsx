@@ -60,15 +60,6 @@ const Home = () => {
           <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
             <TokenGlobe height={undefined as unknown as number} />
           </div>
-          {/* token symbol legend */}
-          <div className="mt-3 flex flex-wrap gap-2 justify-center">
-            {TOKENS.filter(t => !t.isNative).slice(0, 8).map(t => (
-              <span key={t.symbol} className="chip-premium flex items-center gap-1.5">
-                {t.logo && <img src={t.logo} alt={t.symbol} className="w-3.5 h-3.5 rounded-full" />}
-                {t.symbol}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
