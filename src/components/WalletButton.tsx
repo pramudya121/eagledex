@@ -14,17 +14,15 @@ const WalletButton = () => {
   const [menu, setMenu] = useState(false);
 
   const onPick = async (id: WalletId) => {
-    if (id === "walletconnect" && !isWalletInstalled(id)) {
-      window.open("https://walletconnect.com/", "_blank", "noopener");
-      return;
-    }
-    await connect(id);
+    // WalletConnect: always available — opens QR modal / mobile deep-link
     setOpen(false);
+    await connect(id);
   };
 
   if (!account) {
-    const installed = WALLETS.filter(w => isWalletInstalled(w.id));
-    const popular = WALLETS.filter(w => !isWalletInstalled(w.id));
+    // WalletConnect always lives in "popular" so users can scan from any mobile wallet
+    const installed = WALLETS.filter(w => w.id !== "walletconnect" && isWalletInstalled(w.id));
+    const popular   = WALLETS.filter(w => w.id === "walletconnect" || !isWalletInstalled(w.id));
 
     return (
       <>
