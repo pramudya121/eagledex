@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatUnits } from "ethers";
 import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3 } from "lucide-react";
-import { explorerAddr } from "@/lib/chain";
+import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolIndex, IndexedPool } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
@@ -15,23 +15,32 @@ const Pools = () => {
   const [sortKey, setSortKey] = useState<SortKey>("tvl");
 
   const allPools = useMemo(() => Object.values(state.pools), [state.pools, state.lastUpdated]);
-  const totalTVL = allPools.reduce((a, p) => a + poolTVL(p), 0);
-  const totalVol = allPools.reduce((a, p) => a + poolVolume(p), 0);
-  const totalSwaps = allPools.reduce((a, p) => a + p.swapCount, 0);
+  // Only show pools whose BOTH tokens are in the registry (hides removed/legacy pairs like WIRL/MON).
+  const knownAddrs = useMemo(
+    () => new Set(TOKENS.filter(t => !t.isNative).map(t => t.address.toLowerCase())),
+    []
+  );
+  const visiblePools = useMemo(
+    () => allPools.filter(p => knownAddrs.has(p.token0.toLowerCase()) && knownAddrs.has(p.token1.toLowerCase())),
+    [allPools, knownAddrs]
+  );
+  const totalTVL = visiblePools.reduce((a, p) => a + poolTVL(p), 0);
+  const totalVol = visiblePools.reduce((a, p) => a + poolVolume(p), 0);
+  const totalSwaps = visiblePools.reduce((a, p) => a + p.swapCount, 0);
 
   const pools = useMemo(() => {
     const filtered = q
-      ? allPools.filter(p =>
+      ? visiblePools.filter(p =>
           p.symbol0.toLowerCase().includes(q.toLowerCase()) ||
           p.symbol1.toLowerCase().includes(q.toLowerCase()) ||
           p.pair.toLowerCase().includes(q.toLowerCase()))
-      : allPools;
+      : visiblePools;
     return [...filtered].sort((a, b) => {
       if (sortKey === "tvl") return poolTVL(b) - poolTVL(a);
       if (sortKey === "vol") return poolVolume(b) - poolVolume(a);
       return b.swapCount - a.swapCount;
     });
-  }, [allPools, q, sortKey]);
+  }, [visiblePools, q, sortKey]);
 
   const loading = state.initializing && pools.length === 0;
 
