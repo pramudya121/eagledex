@@ -124,7 +124,12 @@ const Liquidity = () => {
   const needApproveA = !isNative(a) && aIn > 0n && allowA < aIn;
   const needApproveB = !isNative(b) && bIn > 0n && allowB < bIn;
 
-  const isInitialLiquidityMode = pairAddr !== ZeroAddress && reserves != null && reserves.totalSupply === 0n;
+  // Initial liquidity = pair doesn't exist yet OR pair exists but has zero reserves.
+  // In Uniswap V2, calling addLiquidity on a non-existent pair auto-deploys it via the factory,
+  // so users never need a separate "Create Pair" step.
+  const isInitialLiquidityMode =
+    pairAddr === ZeroAddress ||
+    (reserves != null && reserves.totalSupply === 0n);
 
   // live validation
   useEffect(() => {
@@ -152,7 +157,7 @@ const Liquidity = () => {
     if (!signer || !account || !isCorrectChain) return;
     if (validationError || !aAmt || !bAmt) return;
     if (needApproveA || needApproveB) { setGasEst({ ok: true, warning: "Token approval required first — gas will be re-estimated after approve." } as any); return; }
-    if (pairAddr === ZeroAddress) return;
+    // pairAddr === ZeroAddress is fine — router will auto-create the pair.
     let cancelled = false;
     setEstimating(true);
     (async () => {
@@ -253,25 +258,14 @@ const Liquidity = () => {
           r.addLiquidity(a.address, b.address, va.value!, vb.value!, aMin, bMin, account, dl));
       }
       setAAmt(""); setBAmt("");
-      poolIndex.refreshPair(pairAddr);
-    } catch {} finally { setBusy(false); }
-  };
-
-  const onCreatePair = async () => {
-    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
-    if (a.address.toLowerCase() === b.address.toLowerCase() || wrap(a).toLowerCase() === wrap(b).toLowerCase()) {
-      return toast.error("Cannot create pair with the same token");
-    }
-    setBusy(true);
-    try {
-      const f = new Contract(CONTRACTS.FACTORY, ["function createPair(address,address) returns (address)"], signer);
-      // sendTx already waits for confirmation and surfaces pending/confirmed/failed status in the UI + history
-      await sendTx(`Create pair ${a.symbol}/${b.symbol}`, () => f.createPair(wrap(a), wrap(b)));
-      // Re-read after confirmation
-      const p = await factory.getPair(wrap(a), wrap(b));
-      setPairAddr(p);
-      poolIndex.refresh();
-      toast.success("Pair created — you can now add initial liquidity");
+      // Refresh pair address after first mint (router may have just deployed it),
+      // then nudge the pool index.
+      try {
+        const fresh = await factory.getPair(wrap(a), wrap(b));
+        setPairAddr(fresh);
+        if (fresh !== ZeroAddress) poolIndex.refreshPair(fresh);
+        else poolIndex.refresh();
+      } catch { poolIndex.refresh(); }
     } catch {} finally { setBusy(false); }
   };
 
