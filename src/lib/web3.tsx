@@ -210,6 +210,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setChainId(INTEGRALAYER.chainId);
   }, [provider, signer, switchToIntegralayer]);
 
+  // Expose ensureChain to non-React modules (lib/tx.ts uses it)
+  useEffect(() => {
+    _ensureChainGlobal = ensureChain;
+    return () => { if (_ensureChainGlobal === ensureChain) _ensureChainGlobal = null; };
+  }, [ensureChain]);
+
   const connect = useCallback(async (id: WalletId) => {
     let eth: any;
     if (id === "walletconnect") {
