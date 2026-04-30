@@ -358,7 +358,7 @@ const Liquidity = () => {
                   <span className="font-mono">{Number(formatUnits(reserves.rB, b.decimals)).toLocaleString(undefined,{maximumFractionDigits:4})}</span>
                 </div></>}
               <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/40 truncate">
-                {pairAddr === ZeroAddress ? "Pair does not exist yet — confirm tx to create it." : `Pair: ${pairAddr}`}
+                {pairAddr === ZeroAddress ? "Pair will be created automatically on your first add — no extra tx needed." : `Pair: ${pairAddr}`}
               </div>
             </div>
 
@@ -398,17 +398,17 @@ const Liquidity = () => {
               </div>
             )}
 
-            {pairAddr !== ZeroAddress && reserves && reserves.totalSupply === 0n && (
+            {(pairAddr === ZeroAddress || (reserves && reserves.totalSupply === 0n)) && (
               <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 text-xs flex items-start gap-2 animate-fade-in">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
                 <div>
-                  <div className="font-bold mb-0.5">This pool is empty.</div>
+                  <div className="font-bold mb-0.5">{pairAddr === ZeroAddress ? "New pair — you mint it." : "This pool is empty."}</div>
                   You will be the <span className="font-semibold">first liquidity provider</span> and you set the price.
                   The ratio of {a.symbol}/{b.symbol} you submit becomes the opening price.
                 </div>
               </div>
             )}
-            {(needApproveA || needApproveB) && pairAddr !== ZeroAddress && (
+            {(needApproveA || needApproveB) && (
               <div className="p-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[11px] flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 shrink-0 mt-0.5"/>
                 <span>ERC-20 tokens must be approved to the router once before they can be added to a pool. Approving does <strong>not</strong> move tokens — it only gives permission.</span>
@@ -426,13 +426,11 @@ const Liquidity = () => {
             )}
 
             {/* Pre-flight + soft warnings */}
-            {pairAddr !== ZeroAddress && aAmt && bAmt && !validationError && (
+            {aAmt && bAmt && !validationError && !needApproveA && !needApproveB && (
               <TxPreflight est={gasEst} loading={estimating} symbol="IRL" warnings={softWarnings} />
             )}
 
-            {pairAddr === ZeroAddress ? (
-              <Button disabled={busy || !account} onClick={onCreatePair} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : "Create Pair"}</Button>
-            ) : (needApproveA || needApproveB) ? (
+            {(needApproveA || needApproveB) ? (
               <div className="grid grid-cols-2 gap-2">
                 {needApproveA ? (
                   <Button disabled={busy} onClick={() => onApprove(a)} className="h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : `Approve ${a.symbol}`}</Button>
