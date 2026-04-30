@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* EAGLEDEX — Pitch Black & Crimson premium */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 84% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 14 95% 58%;
+
+    --secondary: 0 0% 6%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 5%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 84% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 70% 45%;
+
+    --border: 0 0% 14%;
+    --input: 0 0% 0%;
+    --ring: 0 84% 55%;
+
+    --radius: 1rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(0 84% 55%), hsl(14 95% 58%));
+    --gradient-surface: linear-gradient(180deg, #050505, #000);
+    --gradient-radial: radial-gradient(circle at 50% 0%, hsl(0 84% 55% / 0.18), transparent 60%);
+    --shadow-glow: 0 10px 40px -10px hsl(0 84% 55% / 0.5);
+    --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.85);
+    --shadow-premium: 0 0 0 1px hsl(0 84% 55% / 0.18), 0 18px 50px -22px hsl(0 84% 55% / 0.35);
+  }
+
+  * { @apply border-border; }
+  html { font-family: 'Inter', system-ui, sans-serif; }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer components {
+  /* Premium pitch-black surface used for cards across all pages.
+     Hover/focus subtly lift and glow with the brand crimson. */
+  .glass {
+    background-color: #000;
+    @apply border border-border/70 rounded-2xl;
+    box-shadow: var(--shadow-card);
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  .glass:hover {
+    border-color: hsl(var(--primary) / 0.45);
+    box-shadow: var(--shadow-premium);
+  }
+  /* Solid, fully opaque pitch-black surface for forms — no see-through */
+  .form-surface {
+    background-color: #000;
+    @apply border border-border/80 rounded-3xl;
+    box-shadow: var(--shadow-card);
+  }
+  .form-field {
+    background-color: #000;
+    @apply border border-border rounded-2xl;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .form-field:hover { border-color: hsl(var(--primary) / 0.5); }
+  .form-field:focus-within {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
+  }
+  .form-field-inset {
+    background-color: #050505;
+    @apply border border-border/70 rounded-2xl;
+  }
+  /* Premium table rows */
+  .row-premium {
+    background-color: #000;
+    @apply border-b border-border/40 transition-colors;
+  }
+  .row-premium:hover { background-color: #0a0606; }
+
+  /* Native inputs/selects/textarea — keep solid black with crimson focus ring */
+  input, select, textarea {
+    background-color: #000 !important;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.55);
+    border-color: hsl(var(--primary)) !important;
+  }
+
+  .btn-primary-grad {
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-glow);
+    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  .btn-primary-grad:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-primary-grad:active { transform: translateY(0); filter: brightness(.95); }
+
+  .text-grad {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Premium chip used in TOC, filters, badges */
+  .chip-premium {
+    background-color: #000;
+    @apply border border-border rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors;
+  }
+  .chip-premium:hover { border-color: hsl(var(--primary) / 0.6); color: hsl(var(--primary)); }
+  .chip-premium[data-active="true"] {
+    background: var(--gradient-primary);
+    color: hsl(var(--primary-foreground));
+    border-color: transparent;
+  }
+}
+
+@layer utilities {
+  .animate-wave {
+    animation: waveMove 18s ease-in-out infinite alternate;
+  }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+  .animate-pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out both; }
+  .animate-slide-up { animation: slideUp 0.6s cubic-bezier(.2,.9,.2,1) both; }
+}
+
+@keyframes waveMove {
+  0% { transform: translate3d(-3%,0,0) scale(1); }
+  100% { transform: translate3d(3%,-2%,0) scale(1.05); }
+}
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes pulseGlow {
+  0%,100% { filter: drop-shadow(0 0 12px hsl(var(--primary)/0.5)); }
+  50% { filter: drop-shadow(0 0 28px hsl(var(--primary)/0.85)); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
