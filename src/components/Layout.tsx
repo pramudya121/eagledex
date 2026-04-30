@@ -3,9 +3,10 @@ import Logo from "./Logo";
 import WalletButton from "./WalletButton";
 import NebulaBackground from "./NebulaBackground";
 import TxHistoryButton from "./TxHistoryButton";
-import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen } from "lucide-react";
+import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen, Home } from "lucide-react";
 
 const NAV = [
+  { to: "/",          label: "Home",      icon: Home },
   { to: "/swap",       label: "Swap",      icon: ArrowLeftRight },
   { to: "/liquidity",  label: "Liquidity", icon: Droplets },
   { to: "/pools",      label: "Pools",     icon: Layers },
@@ -19,10 +20,11 @@ const Layout = () => (
     <NebulaBackground />
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/40 border-b border-border/40">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <NavLink to="/swap"><Logo /></NavLink>
+        <NavLink to="/"><Logo /></NavLink>
         <nav className="hidden md:flex items-center gap-1 glass rounded-full p-1">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to}
+              end={to === "/"}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   isActive ? "btn-primary-grad text-primary-foreground" : "text-muted-foreground hover:text-foreground"
@@ -39,6 +41,7 @@ const Layout = () => (
       <nav className="md:hidden flex overflow-x-auto gap-1 px-3 pb-3">
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to}
+            end={to === "/"}
             className={({ isActive }) =>
               `flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
                 isActive ? "btn-primary-grad text-primary-foreground border-transparent" : "border-border text-muted-foreground"
