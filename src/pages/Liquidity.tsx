@@ -149,6 +149,8 @@ const Liquidity = () => {
     } catch {} finally { setBusy(false); }
   };
 
+  const isInitialLiquidity = !!reserves && reserves.totalSupply === 0n;
+
   const onAdd = async () => {
     if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
     const va = validateAmount(aAmt, a.decimals, { symbol: a.symbol, max: parse(balA, a.decimals) });
@@ -159,8 +161,10 @@ const Liquidity = () => {
     const vd = validateDeadlineMinutes(deadlineM); if (!vd.ok) return toast.error(vd.error!);
     if (needApproveA || needApproveB) return toast.error("Please approve tokens first");
 
-    const aMin = applySlippage(va.value!, slippage);
-    const bMin = applySlippage(vb.value!, slippage);
+    // For initial liquidity (empty pool) the user defines the price; bypass slippage min
+    // (router would otherwise revert because there is no reserve to enforce a ratio against).
+    const aMin = isInitialLiquidity ? 0n : applySlippage(va.value!, slippage);
+    const bMin = isInitialLiquidity ? 0n : applySlippage(vb.value!, slippage);
     const dl = deadlineMin(deadlineM);
     setBusy(true);
     try {
@@ -269,7 +273,9 @@ const Liquidity = () => {
                 <span className="text-muted-foreground">Status</span>
                 {pairAddr === ZeroAddress
                   ? <span className="text-yellow-400 font-semibold flex items-center gap-1"><Info className="w-3.5 h-3.5"/> New Pair</span>
-                  : <span className="text-green-400 font-semibold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5"/> Active Pool</span>}
+                  : reserves && reserves.totalSupply === 0n
+                    ? <span className="text-yellow-400 font-semibold flex items-center gap-1"><Info className="w-3.5 h-3.5"/> Empty Pool — set initial price</span>
+                    : <span className="text-green-400 font-semibold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5"/> Active Pool</span>}
               </div>
               {reserves && pairAddr !== ZeroAddress && <>
                 <div className="flex items-center justify-between">
@@ -327,6 +333,23 @@ const Liquidity = () => {
               </div>
             )}
 
+            {pairAddr !== ZeroAddress && reserves && reserves.totalSupply === 0n && (
+              <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 text-xs flex items-start gap-2 animate-fade-in">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
+                <div>
+                  <div className="font-bold mb-0.5">This pool is empty.</div>
+                  You will be the <span className="font-semibold">first liquidity provider</span> and you set the price.
+                  The ratio of {a.symbol}/{b.symbol} you submit becomes the opening price.
+                </div>
+              </div>
+            )}
+            {(needApproveA || needApproveB) && pairAddr !== ZeroAddress && (
+              <div className="p-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[11px] flex items-start gap-1.5">
+                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5"/>
+                <span>ERC-20 tokens must be approved to the router once before they can be added to a pool. Approving does <strong>not</strong> move tokens — it only gives permission.</span>
+              </div>
+            )}
+
             {pairAddr === ZeroAddress ? (
               <Button disabled={busy || !account} onClick={onCreatePair} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : "Create Pair"}</Button>
             ) : (needApproveA || needApproveB) ? (
@@ -343,7 +366,9 @@ const Liquidity = () => {
                 )}
               </div>
             ) : (
-              <Button disabled={busy || !account || !aAmt || !bAmt || !!validationError} onClick={onAdd} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : "Add Liquidity"}</Button>
+              <Button disabled={busy || !account || !aAmt || !bAmt || !!validationError} onClick={onAdd} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">
+                {busy ? <Loader2 className="animate-spin w-4 h-4"/> : isInitialLiquidity ? "Provide Initial Liquidity" : "Add Liquidity"}
+              </Button>
             )}
           </div>
         </TabsContent>
