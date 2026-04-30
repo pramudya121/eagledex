@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Web3Provider } from "@/lib/web3";
 import Layout from "@/components/Layout";
+import Home from "./pages/Home";
 import Swap from "./pages/Swap";
 import Liquidity from "./pages/Liquidity";
 import Pools from "./pages/Pools";
@@ -24,7 +25,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to="/swap" replace />} />
+              <Route path="/" element={<Home />} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/liquidity" element={<Liquidity />} />
               <Route path="/pools" element={<Pools />} />
