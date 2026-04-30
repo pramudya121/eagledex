@@ -20,18 +20,18 @@ const Home = () => {
       <section className="relative grid lg:grid-cols-2 gap-10 items-center pt-4 pb-12">
         <div className="space-y-6 relative z-10">
           <div className="flex items-center gap-3">
-            <Logo size={84} />
+            <Logo size={120} />
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span className="text-grad">Live on Integralayer Testnet</span>
             <span className="text-muted-foreground">· Chain 26218</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.05]">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1]">
             Trade the universe of <br />
             <span className="text-grad">on-chain</span> tokens.
           </h1>
-          <p className="text-base md:text-lg text-muted-foreground max-w-lg">
+          <p className="text-sm md:text-base text-muted-foreground max-w-lg">
             EAGLEDEX is a fully on-chain AMM built on Integralayer. Swap, provide liquidity, and earn fees with
             transparent routing, real-time pool analytics, and a sleek pitch-black UI.
           </p>
