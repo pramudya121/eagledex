@@ -105,6 +105,13 @@ export function isWalletInstalled(id: WalletId): boolean {
   return getInjected(id) != null;
 }
 
+// Global hook so non-React modules (e.g. lib/tx.ts) can request a chain check
+// before broadcasting a transaction. Registered by Web3Provider on mount.
+let _ensureChainGlobal: (() => Promise<void>) | null = null;
+export async function ensureChainGlobal(): Promise<void> {
+  if (_ensureChainGlobal) return _ensureChainGlobal();
+}
+
 interface Web3Ctx {
   account: string | null;
   chainId: number | null;
