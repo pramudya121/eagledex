@@ -5,7 +5,7 @@ import { FACTORY_ABI, ROUTER_ABI } from "./abis";
 import { bootIndexer } from "./poolIndex";
 import { toast } from "sonner";
 
-export type WalletId = "metamask" | "okx" | "rabby" | "bitget";
+export type WalletId = "metamask" | "okx" | "rabby" | "bitget" | "coinbase" | "subwallet" | "rainbow" | "walletconnect";
 
 type EthereumProvider = any;
 
@@ -29,15 +29,38 @@ function getInjected(id: WalletId): EthereumProvider | null {
     }
     case "bitget":
       return w.bitkeep?.ethereum || (w.ethereum?.isBitKeep ? w.ethereum : null);
+    case "coinbase": {
+      const eth = w.ethereum;
+      if (w.coinbaseWalletExtension) return w.coinbaseWalletExtension;
+      if (eth?.providers?.length) return eth.providers.find((p: any) => p.isCoinbaseWallet) || null;
+      return eth?.isCoinbaseWallet ? eth : null;
+    }
+    case "subwallet":
+      return w.SubWallet || (w.ethereum?.isSubWallet ? w.ethereum : null);
+    case "rainbow": {
+      const eth = w.ethereum;
+      if (eth?.providers?.length) return eth.providers.find((p: any) => p.isRainbow) || null;
+      return eth?.isRainbow ? eth : null;
+    }
+    case "walletconnect":
+      return null; // not yet wired; UI shows install hint
   }
 }
 
-export const WALLETS: { id: WalletId; name: string; icon: string }[] = [
-  { id: "metamask", name: "MetaMask", icon: "🦊" },
-  { id: "okx",      name: "OKX Wallet", icon: "⭕" },
-  { id: "rabby",    name: "Rabby", icon: "🐰" },
-  { id: "bitget",   name: "Bitget Wallet", icon: "🅱️" },
+export const WALLETS: { id: WalletId; name: string; popular?: boolean }[] = [
+  { id: "metamask",      name: "MetaMask" },
+  { id: "rabby",         name: "Rabby Wallet" },
+  { id: "okx",           name: "OKX Wallet" },
+  { id: "bitget",        name: "Bitget Wallet" },
+  { id: "subwallet",     name: "SubWallet" },
+  { id: "coinbase",      name: "Coinbase Wallet", popular: true },
+  { id: "rainbow",       name: "Rainbow",         popular: true },
+  { id: "walletconnect", name: "WalletConnect",   popular: true },
 ];
+
+export function isWalletInstalled(id: WalletId): boolean {
+  return getInjected(id) != null;
+}
 
 interface Web3Ctx {
   account: string | null;
