@@ -11,7 +11,7 @@ import { applySlippage, deadlineMin, getTokenBalance, isNative, parse, wrap } fr
 import { sendTx } from "@/lib/tx";
 import { validateAmount, validateSlippageBps, validateDeadlineMinutes } from "@/lib/validate";
 import { poolIndex } from "@/lib/poolIndex";
-import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
@@ -35,6 +35,7 @@ const Liquidity = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [gasEst, setGasEst] = useState<GasEstimate | null>(null);
   const [estimating, setEstimating] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // REMOVE
   const [rA, setRA] = useState<TokenInfo>(NATIVE_TOKEN);
@@ -363,8 +364,8 @@ const Liquidity = () => {
               </div>
             </div>
 
-            {/* AMM info panel — constant product x*y=k */}
-            {reserves && pairAddr !== ZeroAddress && (
+            {/* AMM info panel — constant product x*y=k (collapsed by default) */}
+            {reserves && pairAddr !== ZeroAddress && showAdvanced && (
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 space-y-1.5 text-xs">
                 <div className="flex items-center gap-1.5 font-semibold text-primary">
                   <Info className="w-3.5 h-3.5"/> AMM • Constant Product (x · y = k)
@@ -382,16 +383,27 @@ const Liquidity = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-2 px-1">
-              <label className="text-[11px] text-muted-foreground">Slippage (%)</label>
-              <Input type="number" min={0.01} max={50} step={0.01} value={(slippage/100).toString()}
-                onChange={e => { const n = Number(e.target.value); if (isFinite(n)) setSlippage(Math.max(1, Math.min(5000, Math.round(n*100)))); }}
-                className="h-8 w-20 text-xs bg-card" />
-              <label className="text-[11px] text-muted-foreground">Deadline (min)</label>
-              <Input type="number" min={1} max={180} step={1} value={deadlineM}
-                onChange={e => { const n = Math.round(Number(e.target.value)); if (isFinite(n)) setDeadlineM(Math.max(1, Math.min(180, n))); }}
-                className="h-8 w-20 text-xs bg-card" />
-            </div>
+            {/* Advanced toggle */}
+            <button onClick={() => setShowAdvanced(v => !v)}
+              className="w-full flex items-center justify-between text-[11px] text-muted-foreground hover:text-primary transition px-1 py-1">
+              <span className="flex items-center gap-1.5">
+                <ChevronDown className={`w-3 h-3 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
+                Advanced
+              </span>
+              <span className="font-mono">Slip {(slippage/100).toFixed(2)}% · {deadlineM}min</span>
+            </button>
+            {showAdvanced && (
+              <div className="flex items-center justify-between gap-2 px-1 animate-fade-in">
+                <label className="text-[11px] text-muted-foreground">Slippage (%)</label>
+                <Input type="number" min={0.01} max={50} step={0.01} value={(slippage/100).toString()}
+                  onChange={e => { const n = Number(e.target.value); if (isFinite(n)) setSlippage(Math.max(1, Math.min(5000, Math.round(n*100)))); }}
+                  className="h-8 w-20 text-xs bg-card" />
+                <label className="text-[11px] text-muted-foreground">Deadline (min)</label>
+                <Input type="number" min={1} max={180} step={1} value={deadlineM}
+                  onChange={e => { const n = Math.round(Number(e.target.value)); if (isFinite(n)) setDeadlineM(Math.max(1, Math.min(180, n))); }}
+                  className="h-8 w-20 text-xs bg-card" />
+              </div>
+            )}
 
             {validationError && (
               <div className="p-2 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center gap-1.5 animate-fade-in">
@@ -416,8 +428,8 @@ const Liquidity = () => {
               </div>
             )}
 
-            {/* Initial price preview (only when pool is empty) */}
-            {isInitialLiquidityMode && aIn > 0n && bIn > 0n && (
+            {/* Initial price preview (only when pool is empty) — keep visible when empty since it's critical */}
+            {isInitialLiquidityMode && aIn > 0n && bIn > 0n && showAdvanced && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3 space-y-1 text-xs animate-fade-in">
                 <div className="font-bold text-primary text-[11px] uppercase tracking-wider flex items-center gap-1.5"><Info className="w-3.5 h-3.5"/> Opening price you will set</div>
                 <div className="flex justify-between"><span className="text-muted-foreground">1 {a.symbol} =</span><span className="font-mono font-semibold">{(Number(formatUnits(bIn, b.decimals)) / Number(formatUnits(aIn, a.decimals))).toLocaleString(undefined,{maximumFractionDigits:8})} {b.symbol}</span></div>
@@ -427,7 +439,7 @@ const Liquidity = () => {
             )}
 
             {/* Pre-flight + soft warnings */}
-            {aAmt && bAmt && !validationError && !needApproveA && !needApproveB && (
+            {aAmt && bAmt && !validationError && !needApproveA && !needApproveB && showAdvanced && (
               <TxPreflight est={gasEst} loading={estimating} symbol="IRL" warnings={softWarnings} />
             )}
 
