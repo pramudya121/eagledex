@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 interface Props { value: TokenInfo; onChange: (t: TokenInfo) => void; exclude?: string; }
 
-const TokenSelect = ({ value, onChange, exclude }: Props) => {
+const TokenSelect = forwardRef<HTMLButtonElement, Props>(({ value, onChange, exclude }, ref) => {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [custom, setCustom] = useState<TokenInfo[]>(() => loadCustomTokens());
@@ -104,7 +104,7 @@ const TokenSelect = ({ value, onChange, exclude }: Props) => {
 
   return (
     <>
-      <button onClick={() => setOpen(true)}
+      <button ref={ref} onClick={() => setOpen(true)}
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary hover:bg-secondary/70 transition-all border border-border">
         {value.logo ? <img src={value.logo} alt={value.symbol} className="w-6 h-6 rounded-full object-cover" onError={(e) => ((e.currentTarget.style.display = "none"))}/>
                     : <div className="w-6 h-6 rounded-full bg-primary/20 grid place-items-center text-[10px] font-bold">{value.symbol[0]}</div>}
@@ -203,6 +203,7 @@ const TokenSelect = ({ value, onChange, exclude }: Props) => {
       </Dialog>
     </>
   );
-};
+});
+TokenSelect.displayName = "TokenSelect";
 
 export default TokenSelect;
