@@ -155,8 +155,6 @@ const Liquidity = () => {
     } catch {} finally { setBusy(false); }
   };
 
-  const isInitialLiquidity = !!reserves && reserves.totalSupply === 0n;
-
   const onAdd = async () => {
     if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
     const va = validateAmount(aAmt, a.decimals, { symbol: a.symbol, max: parse(balA, a.decimals) });
@@ -167,10 +165,25 @@ const Liquidity = () => {
     const vd = validateDeadlineMinutes(deadlineM); if (!vd.ok) return toast.error(vd.error!);
     if (needApproveA || needApproveB) return toast.error("Please approve tokens first");
 
-    // For initial liquidity (empty pool) the user defines the price; bypass slippage min
-    // (router would otherwise revert because there is no reserve to enforce a ratio against).
-    const aMin = isInitialLiquidity ? 0n : applySlippage(va.value!, slippage);
-    const bMin = isInitialLiquidity ? 0n : applySlippage(vb.value!, slippage);
+    // Initial liquidity: V2 router accepts amountAMin/amountBMin but for the FIRST mint
+    // there are no reserves to compare against, so the router uses the raw desired amounts.
+    // Setting min = desired is safe and protects against any pre-mining griefing.
+    // Also: V2 burns 1000 wei MIN_LIQUIDITY on first mint, so sqrt(amountA*amountB) MUST exceed 1000.
+    let aMin: bigint, bMin: bigint;
+    if (isInitialLiquidityMode) {
+      // Sanity: liquidity = sqrt(a*b). We need it > 1000 (10^3) wei.
+      // Cheap bigint sqrt approximation:
+      const product = va.value! * vb.value!;
+      const sqrt = (n: bigint) => { if (n < 2n) return n; let x = n, y = (x + 1n) / 2n; while (y < x) { x = y; y = (x + n / x) / 2n; } return x; };
+      if (sqrt(product) <= 1000n) {
+        return toast.error("Initial liquidity too small — sqrt(amountA × amountB) must exceed 1000 wei (V2 burns 1000 LP on first mint).");
+      }
+      aMin = va.value!;
+      bMin = vb.value!;
+    } else {
+      aMin = applySlippage(va.value!, slippage);
+      bMin = applySlippage(vb.value!, slippage);
+    }
     const dl = deadlineMin(deadlineM);
     setBusy(true);
     try {
@@ -373,7 +386,7 @@ const Liquidity = () => {
               </div>
             ) : (
               <Button disabled={busy || !account || !aAmt || !bAmt || !!validationError} onClick={onAdd} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">
-                {busy ? <Loader2 className="animate-spin w-4 h-4"/> : isInitialLiquidity ? "Provide Initial Liquidity" : "Add Liquidity"}
+                {busy ? <Loader2 className="animate-spin w-4 h-4"/> : isInitialLiquidityMode ? "Provide Initial Liquidity" : "Add Liquidity"}
               </Button>
             )}
           </div>
