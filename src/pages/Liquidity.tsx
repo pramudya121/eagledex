@@ -146,6 +146,58 @@ const Liquidity = () => {
     setValidationError(null);
   }, [aAmt, bAmt, a, b, balA, balB, slippage, deadlineM]);
 
+  // Pre-flight gas estimation for Add Liquidity
+  useEffect(() => {
+    setGasEst(null);
+    if (!signer || !account || !isCorrectChain) return;
+    if (validationError || !aAmt || !bAmt) return;
+    if (needApproveA || needApproveB) { setGasEst({ ok: true, warning: "Token approval required first — gas will be re-estimated after approve." } as any); return; }
+    if (pairAddr === ZeroAddress) return;
+    let cancelled = false;
+    setEstimating(true);
+    (async () => {
+      try {
+        const va = validateAmount(aAmt, a.decimals); const vb = validateAmount(bAmt, b.decimals);
+        if (!va.ok || !vb.ok) return;
+        let aMin: bigint, bMin: bigint;
+        if (isInitialLiquidityMode) { aMin = va.value!; bMin = vb.value!; }
+        else { aMin = applySlippage(va.value!, slippage); bMin = applySlippage(vb.value!, slippage); }
+        const dl = deadlineMin(deadlineM);
+        const r = new Contract(CONTRACTS.ROUTER, ROUTER_ABI, signer);
+        let est: GasEstimate;
+        if (isNative(a) || isNative(b)) {
+          const tokenT = isNative(a) ? b : a;
+          const tokenAmt = isNative(a) ? vb.value! : va.value!;
+          const tokenMin = isNative(a) ? bMin : aMin;
+          const ethAmt = isNative(a) ? va.value! : vb.value!;
+          const ethMin = isNative(a) ? aMin : bMin;
+          est = await estimateContractCall(signer, r, "addLiquidityETH",
+            [tokenT.address, tokenAmt, tokenMin, ethMin, account, dl], { value: ethAmt });
+        } else {
+          est = await estimateContractCall(signer, r, "addLiquidity",
+            [a.address, b.address, va.value!, vb.value!, aMin, bMin, account, dl]);
+        }
+        if (!cancelled) setGasEst(est);
+      } catch (e: any) {
+        if (!cancelled) setGasEst({ ok: false, revertReason: e?.shortMessage || e?.message || "Estimation failed" });
+      } finally { if (!cancelled) setEstimating(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [signer, account, isCorrectChain, aAmt, bAmt, a, b, slippage, deadlineM, needApproveA, needApproveB, pairAddr, validationError, isInitialLiquidityMode]);
+
+  // Soft warnings (deadline / slippage / initial-liquidity dust)
+  const softWarnings = useMemo(() => {
+    const ws: string[] = [];
+    if (deadlineM <= 2) ws.push(`Deadline only ${deadlineM} min — tx may expire before confirmation. Consider 10–20 min.`);
+    if (slippage >= 1000 && !isInitialLiquidityMode) ws.push(`Slippage tolerance is ${(slippage/100).toFixed(2)}% — very high.`);
+    if (isInitialLiquidityMode && aIn > 0n && bIn > 0n) {
+      const product = aIn * bIn;
+      // crude check: anything below ~1e6 wei product will burn nearly all LP
+      if (product < 1_000_000n) ws.push("Initial amounts are too small — V2 burns 1000 wei of LP on first mint, leaving you nothing.");
+    }
+    return ws;
+  }, [deadlineM, slippage, isInitialLiquidityMode, aIn, bIn]);
+
   const onApprove = async (t: TokenInfo) => {
     if (!signer || isNative(t)) return;
     setBusy(true);
@@ -369,6 +421,21 @@ const Liquidity = () => {
               </div>
             )}
 
+            {/* Initial price preview (only when pool is empty) */}
+            {isInitialLiquidityMode && aIn > 0n && bIn > 0n && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3 space-y-1 text-xs animate-fade-in">
+                <div className="font-bold text-primary text-[11px] uppercase tracking-wider flex items-center gap-1.5"><Info className="w-3.5 h-3.5"/> Opening price you will set</div>
+                <div className="flex justify-between"><span className="text-muted-foreground">1 {a.symbol} =</span><span className="font-mono font-semibold">{(Number(formatUnits(bIn, b.decimals)) / Number(formatUnits(aIn, a.decimals))).toLocaleString(undefined,{maximumFractionDigits:8})} {b.symbol}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">1 {b.symbol} =</span><span className="font-mono font-semibold">{(Number(formatUnits(aIn, a.decimals)) / Number(formatUnits(bIn, b.decimals))).toLocaleString(undefined,{maximumFractionDigits:8})} {a.symbol}</span></div>
+                <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/40">aMin = amountADesired and bMin = amountBDesired (no reserves to enforce a ratio against). Slippage tolerance is not applied to the first mint.</div>
+              </div>
+            )}
+
+            {/* Pre-flight + soft warnings */}
+            {pairAddr !== ZeroAddress && aAmt && bAmt && !validationError && (
+              <TxPreflight est={gasEst} loading={estimating} symbol="IRL" warnings={softWarnings} />
+            )}
+
             {pairAddr === ZeroAddress ? (
               <Button disabled={busy || !account} onClick={onCreatePair} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">{busy ? <Loader2 className="animate-spin w-4 h-4"/> : "Create Pair"}</Button>
             ) : (needApproveA || needApproveB) ? (
@@ -385,7 +452,7 @@ const Liquidity = () => {
                 )}
               </div>
             ) : (
-              <Button disabled={busy || !account || !aAmt || !bAmt || !!validationError} onClick={onAdd} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">
+              <Button disabled={busy || !account || !aAmt || !bAmt || !!validationError || gasEst?.ok === false} onClick={onAdd} className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold">
                 {busy ? <Loader2 className="animate-spin w-4 h-4"/> : isInitialLiquidityMode ? "Provide Initial Liquidity" : "Add Liquidity"}
               </Button>
             )}
