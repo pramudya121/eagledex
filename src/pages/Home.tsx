@@ -52,13 +52,16 @@ const Home = () => {
           </div>
         </div>
 
-        {/* 3D Globe — borderless, blends into the nebula background */}
-        <div className="relative">
+        {/* 3D Globe — borderless, blends into the nebula background.
+            Padding ensures orbits never clip on small viewports. */}
+        <div className="relative px-2 sm:px-6 lg:px-8">
           {/* radial primary glow that fades into the page background */}
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.30),transparent_65%)] blur-3xl" />
-          <TokenGlobe height={500} />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.28),transparent_65%)] blur-3xl" />
+          <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
+            <TokenGlobeResponsive />
+          </div>
           {/* token symbol legend */}
-          <div className="mt-2 flex flex-wrap gap-2 justify-center">
+          <div className="mt-3 flex flex-wrap gap-2 justify-center">
             {TOKENS.filter(t => !t.isNative).slice(0, 8).map(t => (
               <span key={t.symbol} className="chip-premium flex items-center gap-1.5">
                 {t.logo && <img src={t.logo} alt={t.symbol} className="w-3.5 h-3.5 rounded-full" />}
