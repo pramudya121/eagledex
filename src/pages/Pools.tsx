@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatUnits } from "ethers";
 import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3 } from "lucide-react";
-import { explorerAddr } from "@/lib/chain";
+import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolIndex, IndexedPool } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
