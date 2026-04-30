@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useWeb3, WALLETS, WalletId, isWalletInstalled } from "@/lib/web3";
+import { useWeb3, WALLETS, WalletId, isWalletInstalled, WC_AVAILABLE } from "@/lib/web3";
 import { INTEGRALAYER, explorerAddr } from "@/lib/chain";
-import { ExternalLink, LogOut, AlertTriangle, Wallet, X, Home, Sparkles } from "lucide-react";
+import { ExternalLink, LogOut, AlertTriangle, Wallet, X, Home, Sparkles, Info } from "lucide-react";
 import { WALLET_ICON } from "./WalletIcons";
+import { toast } from "sonner";
 
 const short = (a: string) => `${a.slice(0,6)}…${a.slice(-4)}`;
 
@@ -14,7 +15,13 @@ const WalletButton = () => {
   const [menu, setMenu] = useState(false);
 
   const onPick = async (id: WalletId) => {
-    // WalletConnect: always available — opens QR modal / mobile deep-link
+    if (id === "walletconnect" && !WC_AVAILABLE) {
+      toast.error("WalletConnect not configured", {
+        description: "Set VITE_WC_PROJECT_ID from cloud.reown.com to enable QR pairing.",
+        action: { label: "Get ID", onClick: () => window.open("https://cloud.reown.com", "_blank") },
+      });
+      return;
+    }
     setOpen(false);
     await connect(id);
   };
@@ -64,12 +71,18 @@ const WalletButton = () => {
                     <ul className="space-y-1">
                       {popular.map(w => {
                         const Icon = WALLET_ICON[w.id];
+                        const wcDisabled = w.id === "walletconnect" && !WC_AVAILABLE;
                         return (
                           <li key={w.id}>
                             <button onClick={() => onPick(w.id)}
                               className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-primary/10 transition text-left">
                               <Icon />
-                              <span className="font-bold text-sm">{w.name}</span>
+                              <span className="font-bold text-sm flex-1">{w.name}</span>
+                              {wcDisabled && (
+                                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-500 flex items-center gap-1">
+                                  <Info className="w-2.5 h-2.5"/> setup
+                                </span>
+                              )}
                             </button>
                           </li>
                         );

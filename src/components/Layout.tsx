@@ -3,6 +3,7 @@ import Logo from "./Logo";
 import WalletButton from "./WalletButton";
 import NebulaBackground from "./NebulaBackground";
 import TxHistoryButton from "./TxHistoryButton";
+import ChainBanner from "./ChainBanner";
 import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen, Home } from "lucide-react";
 
 const NAV = [
@@ -19,6 +20,7 @@ const Layout = () => (
   <div className="min-h-screen flex flex-col">
     <NebulaBackground />
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/40 border-b border-border/40">
+      <ChainBanner />
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <NavLink to="/"><Logo /></NavLink>
         <nav className="hidden md:flex items-center gap-1 glass rounded-full p-1">

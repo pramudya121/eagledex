@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { explorerTx } from "./chain";
 import { txStore } from "./txStore";
-import { ensureChainGlobal } from "./web3";
+import { ensureChainGlobal, refreshBalanceGlobal } from "./web3";
 
 export async function sendTx<T extends { hash: string; wait: () => Promise<any> }>(label: string, fn: () => Promise<T>) {
   const id = `tx-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -41,6 +41,8 @@ export async function sendTx<T extends { hash: string; wait: () => Promise<any> 
       description: `Block ${rc?.blockNumber ?? ""}`,
       action: { label: "Tx", onClick: () => window.open(explorerTx(tx.hash), "_blank") },
     });
+    // Refresh native balance after every confirmed tx (gas was spent).
+    refreshBalanceGlobal().catch(() => {});
     return rc;
   } catch (e: any) {
     const msg = e?.shortMessage || e?.reason || e?.message || String(e);

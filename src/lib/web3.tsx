@@ -101,7 +101,7 @@ export const WALLETS: { id: WalletId; name: string; popular?: boolean }[] = [
 ];
 
 export function isWalletInstalled(id: WalletId): boolean {
-  if (id === "walletconnect") return WC_AVAILABLE;
+  if (id === "walletconnect") return WC_AVAILABLE; // requires VITE_WC_PROJECT_ID
   return getInjected(id) != null;
 }
 
@@ -110,6 +110,13 @@ export function isWalletInstalled(id: WalletId): boolean {
 let _ensureChainGlobal: (() => Promise<void>) | null = null;
 export async function ensureChainGlobal(): Promise<void> {
   if (_ensureChainGlobal) return _ensureChainGlobal();
+}
+
+// Global balance refresh hook — registered by Web3Provider so non-React modules
+// (e.g. lib/tx.ts) can refresh the user's native balance after a successful tx.
+let _refreshBalanceGlobal: (() => Promise<void>) | null = null;
+export async function refreshBalanceGlobal(): Promise<void> {
+  if (_refreshBalanceGlobal) return _refreshBalanceGlobal();
 }
 
 interface Web3Ctx {
@@ -215,6 +222,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     _ensureChainGlobal = ensureChain;
     return () => { if (_ensureChainGlobal === ensureChain) _ensureChainGlobal = null; };
   }, [ensureChain]);
+
+  // Expose refreshBalance to non-React modules
+  useEffect(() => {
+    _refreshBalanceGlobal = refreshBalance;
+    return () => { if (_refreshBalanceGlobal === refreshBalance) _refreshBalanceGlobal = null; };
+  }, [refreshBalance]);
 
   const connect = useCallback(async (id: WalletId) => {
     let eth: any;
