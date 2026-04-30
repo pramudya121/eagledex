@@ -1,10 +1,14 @@
 import { useMemo } from "react";
 import { formatUnits } from "ethers";
-import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, ArrowDownRight, DollarSign } from "lucide-react";
+import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, DollarSign, BarChart3, LineChart as LineIcon } from "lucide-react";
 import { explorerTx } from "@/lib/chain";
-import { usePoolIndex, poolTVL, poolVolume, poolPrice } from "@/lib/poolIndex";
+import { usePoolIndex, poolTVL, poolVolume } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PriceChart from "@/components/PriceChart";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  AreaChart, Area, LineChart, Line, Legend,
+} from "recharts";
 
 const Analytics = () => {
   const state = usePoolIndex();
@@ -16,6 +20,40 @@ const Analytics = () => {
 
   const top = useMemo(() => [...pools].sort((a, b) => poolTVL(b) - poolTVL(a)).slice(0, 8), [pools]);
   const recent = state.recentSwaps.slice(0, 15);
+
+  // ---- Bar chart: Top pairs TVL vs Volume ----
+  const barData = useMemo(() =>
+    [...pools]
+      .map(p => ({ name: `${p.symbol0}/${p.symbol1}`, tvl: poolTVL(p), volume: poolVolume(p) }))
+      .sort((a, b) => b.tvl - a.tvl)
+      .slice(0, 8),
+    [pools],
+  );
+
+  // ---- DEX growth: cumulative swap count over time, bucketed by hour ----
+  const growth = useMemo(() => {
+    const swaps = state.recentSwaps;
+    if (swaps.length < 2) return [] as { t: number; label: string; swaps: number; volume: number }[];
+    const HOUR = 60 * 60 * 1000;
+    const buckets = new Map<number, { swaps: number; volume: number }>();
+    for (const s of swaps) {
+      const bucket = Math.floor((s.ts ?? Date.now()) / HOUR) * HOUR;
+      const cur = buckets.get(bucket) ?? { swaps: 0, volume: 0 };
+      cur.swaps += 1;
+      cur.volume += Number(formatUnits(s.amount0In + s.amount0Out, 18))
+                  + Number(formatUnits(s.amount1In + s.amount1Out, 18));
+      buckets.set(bucket, cur);
+    }
+    const arr = Array.from(buckets.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([t, v]) => ({ t, label: new Date(t).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit" }), ...v }));
+    // turn into cumulative
+    let cumS = 0, cumV = 0;
+    return arr.map(x => {
+      cumS += x.swaps; cumV += x.volume;
+      return { t: x.t, label: x.label, swaps: cumS, volume: cumV };
+    });
+  }, [state.recentSwaps]);
 
   // TVL distribution (top 5 + Others)
   const dist = useMemo(() => {
@@ -72,6 +110,75 @@ const Analytics = () => {
 
       {/* Realtime price chart */}
       <PriceChart />
+
+      {/* Bar chart: Top pairs by TVL vs Volume */}
+      <div className="glass rounded-2xl p-5">
+        <h2 className="font-bold mb-3 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary"/> Top Pairs — TVL vs Volume</h2>
+        {barData.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-10">No pair data yet</p>
+        ) : (
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3}/>
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={50} />
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: any, n: any) => [Number(v).toLocaleString(undefined,{maximumFractionDigits:2}), n === "tvl" ? "TVL" : "Volume"]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => v === "tvl" ? "TVL" : "Volume"} />
+                <Bar dataKey="tvl" fill="hsl(var(--primary))" radius={[6,6,0,0]} />
+                <Bar dataKey="volume" fill="#a78bfa" radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* DEX growth — cumulative swaps and volume */}
+      <div className="glass rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold flex items-center gap-2"><LineIcon className="w-4 h-4 text-primary"/> DEX Growth</h2>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Cumulative · hourly</span>
+        </div>
+        {growth.length < 2 ? (
+          <p className="text-sm text-muted-foreground text-center py-10">Growth chart appears after multiple swaps are recorded.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="h-[220px]">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Cumulative swaps</div>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growth} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gSw" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.6}/>
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3}/>
+                  <XAxis dataKey="label" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd"/>
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={36}/>
+                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}/>
+                  <Area type="monotone" dataKey="swaps" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#gSw)"/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="h-[220px]">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Cumulative volume</div>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={growth} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3}/>
+                  <XAxis dataKey="label" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd"/>
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={48}/>
+                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}/>
+                  <Line type="monotone" dataKey="volume" stroke="#a78bfa" strokeWidth={2} dot={false}/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* Top pairs table */}
