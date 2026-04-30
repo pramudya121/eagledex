@@ -13,6 +13,9 @@ import { validateAmount, validateSlippageBps, validateDeadlineMinutes } from "@/
 import { poolIndex } from "@/lib/poolIndex";
 import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { estimateContractCall, GasEstimate } from "@/lib/gas";
+import TxPreflight from "@/components/TxPreflight";
+import { NATIVE_TOKEN } from "@/lib/chain";
 
 const Liquidity = () => {
   const { account, signer, readProvider, factory, isCorrectChain } = useWeb3();
@@ -30,6 +33,8 @@ const Liquidity = () => {
   const [slippage, setSlippage] = useState(100); // 1% default
   const [deadlineM, setDeadlineM] = useState(20);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [gasEst, setGasEst] = useState<GasEstimate | null>(null);
+  const [estimating, setEstimating] = useState(false);
 
   // REMOVE
   const [rA, setRA] = useState<TokenInfo>(NATIVE_TOKEN);
@@ -119,6 +124,8 @@ const Liquidity = () => {
   const bIn = useMemo(() => parse(bAmt, b.decimals), [bAmt, b.decimals]);
   const needApproveA = !isNative(a) && aIn > 0n && allowA < aIn;
   const needApproveB = !isNative(b) && bIn > 0n && allowB < bIn;
+
+  const isInitialLiquidityMode = pairAddr !== ZeroAddress && reserves != null && reserves.totalSupply === 0n;
 
   // live validation
   useEffect(() => {
