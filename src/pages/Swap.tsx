@@ -10,7 +10,7 @@ import { applySlippage, deadlineMin, getTokenBalance, isNative, parse, unwrapIRL
 import { sendTx } from "@/lib/tx";
 import { validateAmount, validateSlippageBps, validateDeadlineMinutes } from "@/lib/validate";
 import { findBestRoute, impactSeverity, RouteQuote } from "@/lib/router";
-import { ArrowDown, Settings, Loader2, Zap, Repeat, AlertTriangle, Route as RouteIcon, Info } from "lucide-react";
+import { ArrowDown, Settings, Loader2, Zap, Repeat, AlertTriangle, Route as RouteIcon, Info, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
@@ -36,6 +36,7 @@ const Swap = () => {
   const [acceptHighImpact, setAcceptHighImpact] = useState(false);
   const [gasEst, setGasEst] = useState<GasEstimate | null>(null);
   const [estimating, setEstimating] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const symbolOf = (addr: string) => TOKENS.find(t => t.address.toLowerCase() === addr.toLowerCase())?.symbol ?? addr.slice(0, 6);
 
@@ -339,9 +340,23 @@ const Swap = () => {
               <span className="text-muted-foreground">Min received <span className="opacity-70">({(slippage/100).toFixed(2)}% slip)</span></span>
               <span className="font-mono font-semibold">{(Number(amountOut) * (1 - slippage/10000)).toFixed(6)} {tokenOut.symbol}</span>
             </div>
+            {route && (
+              <div className="flex justify-between items-center pt-1 border-t border-border/40">
+                <button onClick={() => setShowDetails(v => !v)} className="text-muted-foreground hover:text-primary flex items-center gap-1 transition">
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+                  {showDetails ? "Hide" : "Show"} details
+                </button>
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono ${
+                  impactSeverity(route.priceImpactBps) === "danger" ? "bg-destructive/20 text-destructive"
+                  : impactSeverity(route.priceImpactBps) === "warn" ? "bg-yellow-500/20 text-yellow-400"
+                  : "bg-secondary text-muted-foreground"}`}>
+                  Impact {route.priceImpactBps != null ? `${(route.priceImpactBps/100).toFixed(2)}%` : "—"} · {route.hops} hop{route.hops>1?"s":""}
+                </span>
+              </div>
+            )}
           </div>
         )}
-        {!isWrapMode && route && (() => {
+        {!isWrapMode && route && showDetails && (() => {
           const sev = impactSeverity(route.priceImpactBps);
           const sevCls = sev === "danger" ? "text-destructive border-destructive/40 bg-destructive/10"
             : sev === "warn" ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10"
