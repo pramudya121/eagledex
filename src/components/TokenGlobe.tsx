@@ -6,7 +6,7 @@ import { TOKENS } from "@/lib/chain";
  * 3D Token Globe — a glowing crimson sphere ringed by intersecting orbits.
  * Token logos travel along the orbit rings smoothly, like satellites.
  */
-const TokenGlobe = ({ height = 460 }: { height?: number }) => {
+const TokenGlobe = ({ height }: { height?: number }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ const TokenGlobe = ({ height = 460 }: { height?: number }) => {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, w() / h(), 0.1, 100);
-    camera.position.set(0, 0.6, 7.2);
+    camera.position.set(0, 0.6, 9.2);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -30,6 +30,18 @@ const TokenGlobe = ({ height = 460 }: { height?: number }) => {
     const rim = new THREE.PointLight(0xff7a3a, 1.2, 30); rim.position.set(-5, -2, 4); scene.add(rim);
 
     const root = new THREE.Group();
+    // Scale whole system so largest orbit always fits inside the viewport
+    // regardless of breakpoint — prevents orbits being clipped on small screens.
+    const fitScale = () => {
+      const aspect = w() / h();
+      const vFov = (camera.fov * Math.PI) / 180;
+      const visibleH = 2 * Math.tan(vFov / 2) * camera.position.z;
+      const visibleW = visibleH * aspect;
+      const maxOrbit = 3.55; // largest ring radius + a little margin
+      const target = Math.min(visibleW, visibleH) / 2;
+      const s = Math.min(1, (target / maxOrbit) * 0.92);
+      root.scale.setScalar(s);
+    };
     scene.add(root);
 
     // === Core globe ===
@@ -202,9 +214,11 @@ const TokenGlobe = ({ height = 460 }: { height?: number }) => {
       camera.aspect = w() / h();
       camera.updateProjectionMatrix();
       renderer.setSize(w(), h());
+      fitScale();
     };
     const ro = new ResizeObserver(onResize);
     ro.observe(mount);
+    fitScale();
 
     return () => {
       cancelAnimationFrame(raf);
@@ -216,7 +230,14 @@ const TokenGlobe = ({ height = 460 }: { height?: number }) => {
     };
   }, []);
 
-  return <div ref={mountRef} className="w-full" style={{ height }} aria-hidden />;
+  return (
+    <div
+      ref={mountRef}
+      className="w-full h-full"
+      style={height ? { height } : undefined}
+      aria-hidden
+    />
+  );
 };
 
 export default TokenGlobe;
