@@ -63,6 +63,11 @@ interface State {
   rpcOk: boolean;           // last RPC call succeeded
   // persisted hint of the last time we wrote cache (just for UI)
   cacheLoadedAt: number;
+  // Source telemetry — how data is currently being delivered
+  source: "events" | "rpc-poll" | "cache" | "offline";
+  lastPollAt: number;       // timestamp of last successful RPC poll
+  eventCount: number;       // count of live events received this session
+  pollCount: number;        // count of RPC polls performed this session
 }
 
 // ---- Persistence -----------------------------------------------------------
@@ -126,6 +131,10 @@ const state: State = {
   lastEventAt: 0,
   rpcOk: true,
   cacheLoadedAt: cached?.cacheLoadedAt ?? 0,
+  source: cached ? "cache" : "offline",
+  lastPollAt: 0,
+  eventCount: 0,
+  pollCount: 0,
 };
 
 let listeners: Array<(s: State) => void> = [];
@@ -276,6 +285,8 @@ function attachListeners(addr: string, c: Contract, sym0: string, sym1: string, 
     if (bn > state.syncedBlock) state.syncedBlock = bn;
     if (p && bn > p.lastBlock) p.lastBlock = bn;
     state.lastEventAt = Date.now();
+    state.eventCount++;
+    state.source = "events";
     emit();
   });
   c.on("Swap", (sender: string, a0In: bigint, a1In: bigint, a0Out: bigint, a1Out: bigint, to: string, ev: any) => {
@@ -288,6 +299,8 @@ function attachListeners(addr: string, c: Contract, sym0: string, sym1: string, 
     if (bn > state.syncedBlock) state.syncedBlock = bn;
     if (bn > p.lastBlock) p.lastBlock = bn;
     state.lastEventAt = Date.now();
+    state.eventCount++;
+    state.source = "events";
     state.recentSwaps = [{
       pair: addr, symbol0: p.symbol0, symbol1: p.symbol1,
       amount0In: a0In, amount1In: a1In, amount0Out: a0Out, amount1Out: a1Out,
@@ -353,6 +366,12 @@ export function bootIndexer(p: JsonRpcProvider) {
       state.headBlock = h;
       if (state.syncedBlock === 0) state.syncedBlock = h;
       state.rpcOk = true;
+      state.pollCount++;
+      state.lastPollAt = Date.now();
+      // If we haven't received a live event in 30s, declare we're on the polling fallback path.
+      const eventStale = !state.lastEventAt || Date.now() - state.lastEventAt > 30_000;
+      if (eventStale && state.source !== "events") state.source = "rpc-poll";
+      else if (eventStale) state.source = "rpc-poll";
     } catch { state.rpcOk = false; }
     discover();
     Object.keys(state.pools).forEach(refreshPair);
@@ -368,6 +387,18 @@ export function getSyncStatus(s: { headBlock: number; syncedBlock: number; lastE
   const lag = Math.max(0, s.headBlock - s.syncedBlock);
   if (lag > 50) return { status: "lagging" as SyncStatus, lag, label: `Lag ${lag} blk` };
   return { status: "synced" as SyncStatus, lag, label: "Synced" };
+}
+
+/** Human description of the active data source. */
+export function getDataSource(s: State): { source: State["source"]; label: string; detail: string } {
+  if (!s.rpcOk) return { source: "offline", label: "Offline", detail: "RPC unreachable — showing cached data" };
+  if (s.source === "events" && s.lastEventAt && Date.now() - s.lastEventAt < 30_000)
+    return { source: "events", label: "RPC events (live)", detail: `${s.eventCount} live events received` };
+  if (s.source === "rpc-poll" || (s.lastPollAt && (!s.lastEventAt || Date.now() - s.lastEventAt > 30_000)))
+    return { source: "rpc-poll", label: "RPC poll fallback", detail: `Polling every 15s · ${s.pollCount} polls` };
+  if (Object.keys(s.pools).length > 0)
+    return { source: "cache", label: "Cached", detail: "Loaded from local cache, awaiting first sync" };
+  return { source: "offline", label: "Connecting…", detail: "Establishing RPC link" };
 }
 
 export const poolIndex = {

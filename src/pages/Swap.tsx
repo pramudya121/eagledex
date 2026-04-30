@@ -12,6 +12,9 @@ import { validateAmount, validateSlippageBps, validateDeadlineMinutes } from "@/
 import { findBestRoute, impactSeverity, RouteQuote } from "@/lib/router";
 import { ArrowDown, Settings, Loader2, Zap, Repeat, AlertTriangle, Route as RouteIcon, Info } from "lucide-react";
 import { toast } from "sonner";
+import { estimateContractCall, GasEstimate } from "@/lib/gas";
+import TxPreflight from "@/components/TxPreflight";
+import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
 
 const Swap = () => {
   const { account, signer, readProvider, router, isCorrectChain } = useWeb3();
@@ -30,6 +33,8 @@ const Swap = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteQuote | null>(null);
   const [acceptHighImpact, setAcceptHighImpact] = useState(false);
+  const [gasEst, setGasEst] = useState<GasEstimate | null>(null);
+  const [estimating, setEstimating] = useState(false);
 
   const symbolOf = (addr: string) => TOKENS.find(t => t.address.toLowerCase() === addr.toLowerCase())?.symbol ?? addr.slice(0, 6);
 
@@ -101,6 +106,58 @@ const Swap = () => {
     if (!d.ok) { setValidationError(d.error!); return; }
     setValidationError(null);
   }, [amountIn, tokenIn, balIn, slippage, deadlineM]);
+
+  // Pre-flight gas estimation — re-runs whenever a meaningful input changes.
+  useEffect(() => {
+    setGasEst(null);
+    if (!signer || !account || !isCorrectChain) return;
+    if (validationError) return;
+    if (!amountIn || !route || isWrapMode) return;
+    let cancelled = false;
+    setEstimating(true);
+    (async () => {
+      try {
+        const inAmt = parse(amountIn, tokenIn.decimals);
+        if (inAmt === 0n) return;
+        // Skip estimate if user must approve first — would always revert.
+        if (!isNative(tokenIn)) {
+          const erc = new Contract(tokenIn.address, ERC20_ABI, signer);
+          const allow: bigint = await erc.allowance(account, CONTRACTS.ROUTER);
+          if (allow < inAmt) { setGasEst({ ok: true, warning: "Token approval required first — gas will be re-estimated after approve." } as any); return; }
+        }
+        const minOut = applySlippage(route.amountOut, slippage);
+        const r = new Contract(CONTRACTS.ROUTER, ROUTER_ABI, signer);
+        const dl = deadlineMin(deadlineM);
+        let est: GasEstimate;
+        if (isNative(tokenIn)) {
+          est = await estimateContractCall(signer, r, "swapExactETHForTokens", [minOut, route.path, account, dl], { value: inAmt });
+        } else if (isNative(tokenOut)) {
+          est = await estimateContractCall(signer, r, "swapExactTokensForETH", [inAmt, minOut, route.path, account, dl]);
+        } else {
+          est = await estimateContractCall(signer, r, "swapExactTokensForTokens", [inAmt, minOut, route.path, account, dl]);
+        }
+        if (!cancelled) setGasEst(est);
+      } catch (e: any) {
+        if (!cancelled) setGasEst({ ok: false, revertReason: e?.shortMessage || e?.message || "Estimation failed" });
+      } finally {
+        if (!cancelled) setEstimating(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [signer, account, isCorrectChain, amountIn, route, slippage, deadlineM, tokenIn, tokenOut, validationError, isWrapMode]);
+
+  // Soft warnings — deadline / slippage thresholds vs actual price impact
+  const softWarnings = useMemo(() => {
+    const ws: string[] = [];
+    if (deadlineM <= 2) ws.push(`Deadline only ${deadlineM} min — tx may expire before confirmation in busy blocks. Consider 10–20 min.`);
+    if (slippage >= 1000) ws.push(`Slippage tolerance is ${(slippage/100).toFixed(2)}% — very high; bots can sandwich-attack you.`);
+    if (route?.priceImpactBps != null && route.priceImpactBps >= slippage) {
+      ws.push(`Current price impact (${(route.priceImpactBps/100).toFixed(2)}%) is at or above your slippage tolerance (${(slippage/100).toFixed(2)}%). The tx will likely revert with INSUFFICIENT_OUTPUT_AMOUNT — raise slippage or lower amount.`);
+    } else if (route?.priceImpactBps != null && route.priceImpactBps * 2 >= slippage) {
+      ws.push(`Price impact (${(route.priceImpactBps/100).toFixed(2)}%) is close to your slippage budget (${(slippage/100).toFixed(2)}%). Consider raising slippage or splitting the trade.`);
+    }
+    return ws;
+  }, [deadlineM, slippage, route]);
 
   const onSwap = async () => {
     if (!signer || !account) return toast.error("Connect wallet");
@@ -365,7 +422,17 @@ const Swap = () => {
           <div className="mt-3 p-2 rounded-lg bg-destructive/10 text-destructive text-xs text-center">No liquidity pair found for this route.</div>
         )}
 
-        <Button disabled={!account || busy || !amountIn || quoting || !!validationError || (!isWrapMode && noPair) || (!isWrapMode && (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact)}
+        {!isWrapMode && amountIn && !validationError && !noPair && (
+          <TxPreflight
+            est={gasEst}
+            loading={estimating}
+            symbol={NATIVE.symbol}
+            warnings={softWarnings}
+            className="mt-3"
+          />
+        )}
+
+        <Button disabled={!account || busy || !amountIn || quoting || !!validationError || (!isWrapMode && noPair) || (!isWrapMode && (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact) || (gasEst?.ok === false)}
           onClick={onSwap}
           className="w-full mt-4 h-14 text-base font-bold rounded-2xl btn-primary-grad text-primary-foreground disabled:opacity-50">
           {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
@@ -374,6 +441,7 @@ const Swap = () => {
             : isWrap ? <><Repeat className="w-4 h-4 mr-2" /> Wrap</>
             : isUnwrap ? <><Repeat className="w-4 h-4 mr-2" /> Unwrap</>
             : noPair ? "No route"
+            : gasEst?.ok === false ? "Cannot execute (would revert)"
             : (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact ? "Confirm high impact"
             : <><Zap className="w-4 h-4 mr-2" /> Swap</>}
         </Button>
