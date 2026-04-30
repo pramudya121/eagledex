@@ -422,7 +422,17 @@ const Swap = () => {
           <div className="mt-3 p-2 rounded-lg bg-destructive/10 text-destructive text-xs text-center">No liquidity pair found for this route.</div>
         )}
 
-        <Button disabled={!account || busy || !amountIn || quoting || !!validationError || (!isWrapMode && noPair) || (!isWrapMode && (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact)}
+        {!isWrapMode && amountIn && !validationError && !noPair && (
+          <TxPreflight
+            est={gasEst}
+            loading={estimating}
+            symbol={NATIVE.symbol}
+            warnings={softWarnings}
+            className="mt-3"
+          />
+        )}
+
+        <Button disabled={!account || busy || !amountIn || quoting || !!validationError || (!isWrapMode && noPair) || (!isWrapMode && (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact) || (gasEst?.ok === false)}
           onClick={onSwap}
           className="w-full mt-4 h-14 text-base font-bold rounded-2xl btn-primary-grad text-primary-foreground disabled:opacity-50">
           {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
@@ -431,6 +441,7 @@ const Swap = () => {
             : isWrap ? <><Repeat className="w-4 h-4 mr-2" /> Wrap</>
             : isUnwrap ? <><Repeat className="w-4 h-4 mr-2" /> Unwrap</>
             : noPair ? "No route"
+            : gasEst?.ok === false ? "Cannot execute (would revert)"
             : (route?.priceImpactBps ?? 0) >= 1000 && !acceptHighImpact ? "Confirm high impact"
             : <><Zap className="w-4 h-4 mr-2" /> Swap</>}
         </Button>
