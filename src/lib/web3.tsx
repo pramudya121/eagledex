@@ -9,15 +9,21 @@ export type WalletId = "metamask" | "okx" | "rabby" | "bitget" | "coinbase" | "s
 
 type EthereumProvider = any;
 
-// WalletConnect v2 — singleton EIP-1193 provider
-const WC_PROJECT_ID =
-  (import.meta as any).env?.VITE_WC_PROJECT_ID ||
-  // Public fallback project id (rate-limited demo). Replace via env for production.
-  "3fcc6bba6f1de962d911bb5b5c9dba88";
+// WalletConnect v2 — singleton EIP-1193 provider.
+// Requires a real Reown / WalletConnect Cloud projectId via VITE_WC_PROJECT_ID.
+// We do NOT bake a public/demo id because it triggers a "Project not found" WS
+// error on the relay server (code 3000). When missing we surface a clear toast.
+const WC_PROJECT_ID = ((import.meta as any).env?.VITE_WC_PROJECT_ID || "").trim();
+export const WC_AVAILABLE = WC_PROJECT_ID.length >= 8;
 
 let _wcProvider: any | null = null;
 let _wcInitPromise: Promise<any> | null = null;
 async function getWalletConnectProvider(): Promise<any> {
+  if (!WC_AVAILABLE) {
+    throw new Error(
+      "WalletConnect not configured. Set VITE_WC_PROJECT_ID from cloud.reown.com.",
+    );
+  }
   if (_wcProvider) return _wcProvider;
   if (_wcInitPromise) return _wcInitPromise;
   _wcInitPromise = (async () => {
@@ -76,8 +82,9 @@ function getInjected(id: WalletId): EthereumProvider | null {
       return eth?.isRainbow ? eth : null;
     }
     case "walletconnect":
-      // WalletConnect doesn't need an injected provider — it's always "available".
-      // We return a sentinel truthy value so UI treats it as connectable.
+      // WalletConnect doesn't need an injected provider — it's reachable via QR.
+      // Only mark "available" when projectId is configured.
+      if (!WC_AVAILABLE) return null;
       return _wcProvider ?? ({ __wc: true } as any);
   }
 }
@@ -94,7 +101,7 @@ export const WALLETS: { id: WalletId; name: string; popular?: boolean }[] = [
 ];
 
 export function isWalletInstalled(id: WalletId): boolean {
-  if (id === "walletconnect") return true; // always available via QR / mobile deeplink
+  if (id === "walletconnect") return WC_AVAILABLE;
   return getInjected(id) != null;
 }
 
