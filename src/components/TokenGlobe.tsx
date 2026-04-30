@@ -6,7 +6,7 @@ import { TOKENS } from "@/lib/chain";
  * 3D Token Globe — a glowing crimson sphere ringed by intersecting orbits.
  * Token logos travel along the orbit rings smoothly, like satellites.
  */
-const TokenGlobe = ({ height = 460 }: { height?: number }) => {
+const TokenGlobe = ({ height }: { height?: number }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -230,7 +230,14 @@ const TokenGlobe = ({ height = 460 }: { height?: number }) => {
     };
   }, []);
 
-  return <div ref={mountRef} className="w-full" style={{ height }} aria-hidden />;
+  return (
+    <div
+      ref={mountRef}
+      className="w-full h-full"
+      style={height ? { height } : undefined}
+      aria-hidden
+    />
+  );
 };
 
 export default TokenGlobe;
