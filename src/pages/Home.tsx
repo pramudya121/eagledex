@@ -18,10 +18,10 @@ const Home = () => {
   return (
     <div className="animate-slide-up">
       {/* HERO */}
-      <section className="relative grid lg:grid-cols-2 gap-8 items-center pt-2 pb-10">
+      <section className="relative grid lg:grid-cols-2 gap-10 items-center pt-4 pb-12">
         <div className="space-y-6 relative z-10">
           <div className="flex items-center gap-3">
-            <Logo size={48} />
+            <Logo size={84} />
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -52,14 +52,13 @@ const Home = () => {
           </div>
         </div>
 
-        {/* 3D Globe */}
+        {/* 3D Globe — borderless, blends into the nebula background */}
         <div className="relative">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.25),transparent_60%)] blur-2xl" />
-          <div className="glass rounded-3xl p-2 overflow-hidden">
-            <TokenGlobe height={460} />
-          </div>
+          {/* radial primary glow that fades into the page background */}
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.30),transparent_65%)] blur-3xl" />
+          <TokenGlobe height={500} />
           {/* token symbol legend */}
-          <div className="mt-3 flex flex-wrap gap-2 justify-center">
+          <div className="mt-2 flex flex-wrap gap-2 justify-center">
             {TOKENS.filter(t => !t.isNative).slice(0, 8).map(t => (
               <span key={t.symbol} className="chip-premium flex items-center gap-1.5">
                 {t.logo && <img src={t.logo} alt={t.symbol} className="w-3.5 h-3.5 rounded-full" />}
