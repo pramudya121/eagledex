@@ -1,20 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, formatUnits, parseUnits, isAddress } from "ethers";
 import { toast } from "sonner";
-import { Shield, Loader2, Plus, Edit3, RefreshCw, Crown, AlertTriangle, ExternalLink } from "lucide-react";
+import {
+  Shield, Loader2, Plus, Edit3, RefreshCw, Settings, AlertTriangle,
+  ExternalLink, Zap, X, Pencil,
+} from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
-import { CONTRACTS, explorerAddr } from "@/lib/chain";
+import { CONTRACTS, explorerAddr, TOKENS, TokenInfo } from "@/lib/chain";
 import { FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool } from "@/lib/farm";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
+type Tab = "add" | "edit" | "mass";
+
 const Admin = () => {
   const { account, signer, readProvider } = useWeb3();
   const [owner, setOwner] = useState<string | null>(null);
   const [pools, setPools] = useState<FarmPool[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("add");
 
   const farmRead = useMemo(() => getFarm(readProvider), [readProvider]);
   const isOwner = !!(owner && account && owner.toLowerCase() === account.toLowerCase());
@@ -56,9 +62,7 @@ const Admin = () => {
       <div className="max-w-xl mx-auto glass rounded-3xl p-10 text-center border border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
         <AlertTriangle className="w-10 h-10 mx-auto text-red-400 mb-3"/>
         <h2 className="text-2xl font-extrabold mb-1">Access denied</h2>
-        <p className="text-sm text-muted-foreground">
-          Only the contract owner can access this panel.
-        </p>
+        <p className="text-sm text-muted-foreground">Only the contract owner can access this panel.</p>
         <div className="mt-3 text-[11px] font-mono text-muted-foreground">
           Owner: {owner ? <a className="text-primary hover:underline" href={explorerAddr(owner)} target="_blank" rel="noreferrer">{owner.slice(0,8)}…{owner.slice(-6)}</a> : "unknown"}
         </div>
@@ -67,45 +71,84 @@ const Admin = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto animate-slide-up space-y-6">
-      <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 to-transparent p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl btn-primary-grad grid place-items-center">
-            <Crown className="w-6 h-6 text-primary-foreground"/>
+    <div className="max-w-2xl mx-auto animate-slide-up">
+      <div className="glass rounded-3xl p-6 border border-primary/30 shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.5)]">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500/20 to-violet-600/20 border border-fuchsia-500/40 grid place-items-center">
+            <Settings className="w-5 h-5 text-fuchsia-400" />
           </div>
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight"><span className="text-grad">Farm Admin</span></h1>
-            <p className="text-xs text-muted-foreground">Manage pools, rewards & ownership</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight">
+              <span className="bg-gradient-to-r from-fuchsia-400 to-orange-300 bg-clip-text text-transparent">Farming Admin</span>
+            </h1>
+            <p className="text-xs text-muted-foreground">Owner-only controls</p>
           </div>
-          <button onClick={load} className="ml-auto px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5"/> Refresh
+          <button onClick={load} className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-card transition" title="Refresh">
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Tabs */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <TabBtn active={tab === "add"} onClick={() => setTab("add")} icon={<Plus className="w-4 h-4"/>} label="Add Pool" gradient />
+          <TabBtn active={tab === "edit"} onClick={() => setTab("edit")} icon={<Pencil className="w-4 h-4"/>} label="Edit Pool" />
+          <TabBtn active={tab === "mass"} onClick={() => setTab("mass")} icon={<Zap className="w-4 h-4"/>} label="Mass Update" />
+        </div>
+
+        {/* Tab content */}
+        {tab === "add" && <AddPoolTab signer={signer} onChanged={load} />}
+        {tab === "edit" && <EditPoolTab signer={signer} pools={pools} onChanged={load} />}
+        {tab === "mass" && <MassUpdateTab signer={signer} pools={pools} onChanged={load} />}
       </div>
 
-      <AddPoolCard signer={signer} onChanged={load} />
-
-      <div className="glass rounded-2xl p-5">
-        <h2 className="font-bold mb-3 flex items-center gap-2"><Edit3 className="w-4 h-4 text-primary"/> Existing pools ({pools.length})</h2>
-        {!pools.length ? (
-          <p className="text-sm text-muted-foreground text-center py-6">No pools added yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {pools.map(p => <PoolAdminRow key={p.pid} pool={p} signer={signer} onChanged={load} />)}
-          </div>
-        )}
+      {/* Danger zone — always visible below */}
+      <div className="mt-5">
+        <TransferOwnershipCard signer={signer} onChanged={load} />
       </div>
-
-      <MassUpdateCard signer={signer} pools={pools} onChanged={load} />
-      <TransferOwnershipCard signer={signer} onChanged={load} />
     </div>
   );
 };
 
-const AddPoolCard = ({ signer, onChanged }: any) => {
+const TabBtn = ({ active, onClick, icon, label, gradient }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; gradient?: boolean }) => (
+  <button
+    onClick={onClick}
+    className={`h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition border ${
+      active
+        ? gradient
+          ? "bg-gradient-to-r from-fuchsia-500/30 to-violet-600/30 border-fuchsia-400/50 text-fuchsia-200"
+          : "bg-card border-primary/50 text-foreground"
+        : "bg-card/40 border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+    }`}
+  >
+    {icon} <span className="hidden sm:inline">{label}</span><span className="sm:hidden">{label.split(" ")[0]}</span>
+  </button>
+);
+
+const FieldLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-2">{children}</div>
+);
+
+const TokenChips = ({ onPick }: { onPick: (t: TokenInfo) => void }) => (
+  <div className="flex flex-wrap gap-1.5 mt-2">
+    {TOKENS.filter(t => !t.isNative).map(t => (
+      <button
+        key={t.address}
+        type="button"
+        onClick={() => onPick(t)}
+        className="px-2.5 py-1 rounded-full bg-card border border-border hover:border-primary text-[11px] font-semibold transition"
+      >
+        {t.symbol}
+      </button>
+    ))}
+  </div>
+);
+
+/* ============== ADD POOL TAB ============== */
+const AddPoolTab = ({ signer, onChanged }: any) => {
   const [staking, setStaking] = useState("");
   const [reward, setReward] = useState("");
-  const [rpb, setRpb] = useState("");
+  const [rpb, setRpb] = useState("0.01");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
 
@@ -126,38 +169,43 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
       const rpbWei = parseUnits(rpb, 18);
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx("Add farm pool", () => c.addPool(staking, reward, rpbWei));
-      setStaking(""); setReward(""); setRpb("");
+      setStaking(""); setReward(""); setRpb("0.01");
       setConfirm(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
 
   return (
-    <div className="glass rounded-2xl p-5">
-      <h2 className="font-bold mb-3 flex items-center gap-2"><Plus className="w-4 h-4 text-primary"/> Add a new pool</h2>
-      <div className="grid md:grid-cols-3 gap-3">
-        <Field label="Staking token (ERC-20)">
-          <Input value={staking} onChange={e => setStaking(e.target.value)} placeholder="0x…" className="font-mono text-xs"/>
-        </Field>
-        <Field label="Reward token (ERC-20)">
-          <Input value={reward} onChange={e => setReward(e.target.value)} placeholder="0x…" className="font-mono text-xs"/>
-        </Field>
-        <Field label="Reward per block (whole units, 18 decimals assumed)">
-          <Input value={rpb} onChange={e => setRpb(e.target.value)} placeholder="0.1" className="font-mono text-xs"/>
-        </Field>
+    <div className="space-y-4">
+      <div>
+        <FieldLabel>Staking token address</FieldLabel>
+        <Input value={staking} onChange={e => setStaking(e.target.value)} placeholder="0x…" className="font-mono text-xs h-11 bg-card/60" />
+        <TokenChips onPick={t => setStaking(t.address)} />
       </div>
-      <button onClick={() => { if (validate()) setConfirm(true); }} disabled={busy}
-        className="mt-4 h-11 px-6 rounded-xl btn-primary-grad text-primary-foreground font-bold disabled:opacity-50 flex items-center gap-2">
-        {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : <Plus className="w-4 h-4"/>} Create pool
+
+      <div>
+        <FieldLabel>Reward token address</FieldLabel>
+        <Input value={reward} onChange={e => setReward(e.target.value)} placeholder="0x…" className="font-mono text-xs h-11 bg-card/60" />
+        <TokenChips onPick={t => setReward(t.address)} />
+      </div>
+
+      <div>
+        <FieldLabel>Reward per block (in reward-token units)</FieldLabel>
+        <Input value={rpb} onChange={e => setRpb(e.target.value)} placeholder="0.01" className="font-mono text-xs h-11 bg-card/60" />
+      </div>
+
+      <button
+        onClick={() => { if (validate()) setConfirm(true); }}
+        disabled={busy}
+        className="w-full h-12 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_10px_30px_-10px_hsl(280_85%_60%/0.6)]"
+      >
+        {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : <Plus className="w-4 h-4"/>} Add Pool
       </button>
-      <p className="text-[11px] text-muted-foreground mt-2">
-        Note: ensure the farm contract holds enough reward token for distributions.
-      </p>
 
       <ConfirmDialog
         open={confirm}
         title="Create new farm pool?"
-        description="This action is on-chain and cannot be undone. Verify the addresses below carefully."
+        description="This action is on-chain and cannot be undone."
         confirmLabel="Yes, create pool"
         busy={busy}
         onCancel={() => setConfirm(false)}
@@ -174,91 +222,122 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
   );
 };
 
-const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any; onChanged: () => void }) => {
-  const [rpb, setRpb] = useState(formatUnits(pool.rewardPerBlock, 18));
+/* ============== EDIT POOL TAB ============== */
+const EditPoolTab = ({ signer, pools, onChanged }: { signer: any; pools: FarmPool[]; onChanged: () => void }) => {
+  const [pid, setPid] = useState<number | null>(pools[0]?.pid ?? null);
+  const selected = pools.find(p => p.pid === pid) ?? null;
+  const [rpb, setRpb] = useState(selected ? formatUnits(selected.rewardPerBlock, 18) : "");
   const [busy, setBusy] = useState(false);
-  const [confirmUpd, setConfirmUpd] = useState(false);
+  const [confirm, setConfirm] = useState(false);
 
-  const askUpdate = () => {
+  useEffect(() => {
+    if (selected) setRpb(formatUnits(selected.rewardPerBlock, 18));
+  }, [selected]);
+
+  if (!pools.length) {
+    return <p className="text-sm text-muted-foreground text-center py-8">No pools yet. Create one in the Add Pool tab.</p>;
+  }
+
+  const ask = () => {
     if (!signer) return toast.error("Connect wallet");
-    try {
-      const v = parseUnits(rpb || "0", 18);
-      if (v < 0n) throw new Error();
-    } catch { return toast.error("Invalid value"); }
-    setConfirmUpd(true);
+    if (pid == null) return toast.error("Select a pool");
+    try { parseUnits(rpb || "0", 18); } catch { return toast.error("Invalid value"); }
+    setConfirm(true);
   };
 
   const update = async () => {
+    if (pid == null) return;
     setBusy(true);
     try {
       const v = parseUnits(rpb || "0", 18);
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
-      await sendTx(`Update pool #${pool.pid} reward`, () => c.updateRewardPerBlock(pool.pid, v));
-      setConfirmUpd(false);
+      await sendTx(`Update pool #${pid} reward`, () => c.updateRewardPerBlock(pid, v));
+      setConfirm(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
 
   const sync = async () => {
-    if (!signer) return;
+    if (!signer || pid == null) return;
     setBusy(true);
     try {
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
-      await sendTx(`Sync pool #${pool.pid}`, () => c.updatePool(pool.pid));
+      await sendTx(`Sync pool #${pid}`, () => c.updatePool(pid));
       onChanged();
     } catch {} finally { setBusy(false); }
   };
 
-  const currentRpb = formatUnits(pool.rewardPerBlock, 18);
-
   return (
-    <div className="rounded-xl border border-border/60 bg-card/50 p-4">
-      <div className="flex flex-wrap items-center gap-3 mb-3">
-        <div className="w-9 h-9 rounded-lg btn-primary-grad grid place-items-center text-xs font-extrabold text-primary-foreground">#{pool.pid}</div>
-        <div className="font-bold">{pool.stakingSymbol} → {pool.rewardSymbol}</div>
-        <span className="text-[11px] text-muted-foreground font-mono">
-          total: {Number(formatUnits(pool.totalStaked, pool.stakingDecimals)).toLocaleString(undefined,{maximumFractionDigits:4})}
-        </span>
-        <a href={explorerAddr(pool.stakingToken)} target="_blank" rel="noreferrer"
-           className="ml-auto text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1">
-          stake <ExternalLink className="w-3 h-3"/>
-        </a>
+    <div className="space-y-4">
+      <div>
+        <FieldLabel>Select pool</FieldLabel>
+        <div className="flex flex-wrap gap-1.5">
+          {pools.map(p => (
+            <button
+              key={p.pid}
+              onClick={() => setPid(p.pid)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                pid === p.pid
+                  ? "bg-gradient-to-r from-fuchsia-500/30 to-violet-600/30 border-fuchsia-400/60 text-fuchsia-100"
+                  : "bg-card border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              #{p.pid} {p.stakingSymbol}→{p.rewardSymbol}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-wrap items-end gap-3">
-        <Field label="Reward per block">
-          <Input value={rpb} onChange={e => setRpb(e.target.value)} className="font-mono text-xs h-9"/>
-        </Field>
-        <button onClick={askUpdate} disabled={busy}
-          className="h-9 px-4 rounded-lg btn-primary-grad text-primary-foreground text-xs font-bold disabled:opacity-50">
-          Update
-        </button>
-        <button onClick={sync} disabled={busy}
-          className="h-9 px-4 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold disabled:opacity-50">
-          Sync pool
-        </button>
-      </div>
+
+      {selected && (
+        <>
+          <div className="rounded-xl border border-border/60 bg-card/40 p-3 text-xs space-y-1 font-mono">
+            <div><span className="text-muted-foreground">Staking:</span> <a className="text-primary hover:underline break-all" href={explorerAddr(selected.stakingToken)} target="_blank" rel="noreferrer">{selected.stakingToken}</a></div>
+            <div><span className="text-muted-foreground">Reward:</span> <a className="text-primary hover:underline break-all" href={explorerAddr(selected.rewardToken)} target="_blank" rel="noreferrer">{selected.rewardToken}</a></div>
+            <div><span className="text-muted-foreground">Total staked:</span> {Number(formatUnits(selected.totalStaked, selected.stakingDecimals)).toLocaleString(undefined, { maximumFractionDigits: 4 })} {selected.stakingSymbol}</div>
+          </div>
+
+          <div>
+            <FieldLabel>Reward per block</FieldLabel>
+            <Input value={rpb} onChange={e => setRpb(e.target.value)} className="font-mono text-xs h-11 bg-card/60" />
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={ask} disabled={busy}
+              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : <Edit3 className="w-4 h-4"/>} Update Rate
+            </button>
+            <button onClick={sync} disabled={busy}
+              className="h-12 px-5 rounded-xl bg-card border border-border hover:border-primary text-xs font-semibold disabled:opacity-50">
+              Sync
+            </button>
+          </div>
+        </>
+      )}
 
       <ConfirmDialog
-        open={confirmUpd}
-        title={`Update reward rate for pool #${pool.pid}?`}
+        open={confirm}
+        title={`Update reward rate for pool #${pid}?`}
         description="This changes emissions for all stakers in this pool."
-        confirmLabel="Yes, update rate"
+        confirmLabel="Yes, update"
         busy={busy}
-        onCancel={() => setConfirmUpd(false)}
+        onCancel={() => setConfirm(false)}
         onConfirm={update}
         details={
-          <>
-            <div><span className="text-muted-foreground">Pool:</span> {pool.stakingSymbol} → {pool.rewardSymbol}</div>
-            <div><span className="text-muted-foreground">Current:</span> {currentRpb}</div>
-            <div><span className="text-muted-foreground">New:</span> {rpb}</div>
-          </>
+          selected ? (
+            <>
+              <div><span className="text-muted-foreground">Pool:</span> {selected.stakingSymbol} → {selected.rewardSymbol}</div>
+              <div><span className="text-muted-foreground">Current:</span> {formatUnits(selected.rewardPerBlock, 18)}</div>
+              <div><span className="text-muted-foreground">New:</span> {rpb}</div>
+            </>
+          ) : null
         }
       />
     </div>
   );
 };
 
-const MassUpdateCard = ({ signer, pools, onChanged }: any) => {
+/* ============== MASS UPDATE TAB ============== */
+const MassUpdateTab = ({ signer, pools, onChanged }: any) => {
   const [busy, setBusy] = useState(false);
   const run = async () => {
     if (!signer) return;
@@ -270,19 +349,29 @@ const MassUpdateCard = ({ signer, pools, onChanged }: any) => {
     } catch {} finally { setBusy(false); }
   };
   return (
-    <div className="glass rounded-2xl p-5 flex flex-wrap items-center gap-3">
-      <div className="flex-1 min-w-[200px]">
-        <h3 className="font-bold flex items-center gap-2"><RefreshCw className="w-4 h-4 text-primary"/> Mass update all pools</h3>
-        <p className="text-xs text-muted-foreground">Recomputes accRewardPerShare for all {pools.length} pools.</p>
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border/60 bg-card/40 p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-yellow-500/15 border border-yellow-500/30 grid place-items-center">
+            <Zap className="w-4 h-4 text-yellow-400"/>
+          </div>
+          <div className="text-xs leading-relaxed">
+            <div className="font-bold text-foreground mb-1">massUpdatePools()</div>
+            <p className="text-muted-foreground">
+              Recomputes <code className="text-primary">accRewardPerShare</code> for all <b>{pools.length}</b> pools in a single transaction. Useful before changing emissions or pausing rewards.
+            </p>
+          </div>
+        </div>
       </div>
       <button onClick={run} disabled={busy || !pools.length}
-        className="h-11 px-5 rounded-xl btn-primary-grad text-primary-foreground font-bold disabled:opacity-50">
-        {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Run massUpdatePools()"}
+        className="w-full h-12 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2">
+        {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : <Zap className="w-4 h-4"/>} Run Mass Update
       </button>
     </div>
   );
 };
 
+/* ============== TRANSFER OWNERSHIP ============== */
 const TransferOwnershipCard = ({ signer, onChanged }: any) => {
   const [addr, setAddr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -311,9 +400,10 @@ const TransferOwnershipCard = ({ signer, onChanged }: any) => {
     <div className="glass rounded-2xl p-5 border border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent">
       <h3 className="font-bold flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-red-400"/> Danger zone — transfer ownership</h3>
       <div className="flex flex-wrap items-end gap-3">
-        <Field label="New owner address">
+        <label className="block flex-1 min-w-[180px]">
+          <FieldLabel>New owner address</FieldLabel>
           <Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x…" className="font-mono text-xs h-10"/>
-        </Field>
+        </label>
         <button onClick={ask} disabled={busy}
           className="h-10 px-5 rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold text-xs disabled:opacity-50">
           {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Transfer"}
@@ -342,12 +432,5 @@ const TransferOwnershipCard = ({ signer, onChanged }: any) => {
     </div>
   );
 };
-
-const Field = ({ label, children }: any) => (
-  <label className="block flex-1 min-w-[180px]">
-    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</div>
-    {children}
-  </label>
-);
 
 export default Admin;
