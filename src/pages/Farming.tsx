@@ -84,12 +84,35 @@ const Farming = () => {
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
   }, [load]);
-  // Real-time refresh via on-chain events (Deposit/Withdraw/Emergency/RewardPaid)
+  // Real-time refresh via on-chain events. We do a targeted per-pool refetch
+  // when the connected user's address is involved (cheap), and a soft full
+  // refresh for any other user's activity (so totals stay accurate).
   useEffect(() => {
-    const off = subscribeFarmEvents(readProvider, (_kind, _pid, evUser) => {
-      load();
-      if (account && evUser.toLowerCase() === account.toLowerCase()) {
+    const off = subscribeFarmEvents(readProvider, async (kind, pid, evUser) => {
+      const isMine = !!(account && evUser.toLowerCase() === account.toLowerCase());
+      if (isMine) {
+        try {
+          const slim = await refetchPoolForUser(readProvider, pid, account!);
+          setPools(prev => prev.map(p => p.pid === pid ? {
+            ...p,
+            accRewardPerShare: slim.accRewardPerShare,
+            lastRewardBlock:   slim.lastRewardBlock,
+            rewardPerBlock:    slim.rewardPerBlock,
+            totalStaked:       slim.totalStaked,
+            userStaked:        slim.userStaked,
+            userRewardDebt:    slim.userRewardDebt,
+            pending:           slim.pending,
+          } : p));
+        } catch { load(); }
         setHistoryKey(k => k + 1);
+        // After Withdraw/EmergencyWithdraw the staking-token balance & allowance
+        // changed in the user's wallet — kick a full reload to refresh those.
+        if (kind === "Withdraw" || kind === "EmergencyWithdraw" || kind === "Deposit") {
+          load();
+        }
+      } else {
+        // Someone else moved liquidity in this pool: totalStaked changed → soft reload.
+        load();
       }
     });
     return off;
