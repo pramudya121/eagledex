@@ -1,18 +1,31 @@
 import { Contract, JsonRpcProvider, JsonRpcSigner } from "ethers";
-import { CONTRACTS } from "./chain";
+import { CONTRACTS, TOKENS, NATIVE_TOKEN } from "./chain";
 import { FAUCET_ABI, ERC20_ABI } from "./abis";
 
 export type FaucetTokenInfo = {
   index: number;
   address: string;
   symbol: string;
+  name: string;
   decimals: number;
+  logo: string;
   claimAmount: bigint;
   maxClaims: bigint;
   faucetBalance: bigint;
   userClaimed: bigint;
   userLastClaimed: bigint; // unix seconds
 };
+
+/** Look up a token in the EAGLEDEX registry by address. WIRL maps to native logo/symbol. */
+function registryLookup(addr: string) {
+  const a = addr.toLowerCase();
+  // WIRL (wrapped IRL) → display as WIRL with native IRL logo
+  if (a === CONTRACTS.WETH.toLowerCase()) {
+    return { symbol: "WIRL", name: "Wrapped IRL", decimals: 18, logo: NATIVE_TOKEN.logo };
+  }
+  const t = TOKENS.find(x => x.address.toLowerCase() === a);
+  return t ? { symbol: t.symbol, name: t.name, decimals: t.decimals, logo: t.logo } : null;
+}
 
 export function getFaucet(runner: JsonRpcProvider | JsonRpcSigner) {
   return new Contract(CONTRACTS.FAUCET, FAUCET_ABI, runner);
