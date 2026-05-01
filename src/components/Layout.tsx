@@ -2,9 +2,9 @@ import { NavLink, Outlet } from "react-router-dom";
 import Logo from "./Logo";
 import WalletButton from "./WalletButton";
 import NebulaBackground from "./NebulaBackground";
-import TxHistoryButton from "./TxHistoryButton";
 
-import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen, Home, Sprout } from "lucide-react";
+
+import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen, Home, Sprout, Droplet } from "lucide-react";
 
 const NAV = [
   { to: "/",          label: "Home",      icon: Home },
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/liquidity",  label: "Liquidity", icon: Droplets },
   { to: "/pools",      label: "Pools",     icon: Layers },
   { to: "/farming",    label: "Farming",   icon: Sprout },
+  { to: "/faucet",     label: "Faucet",    icon: Droplet },
   { to: "/analytics",  label: "Analytics", icon: BarChart3 },
   { to: "/portfolio",  label: "Portfolio", icon: Briefcase },
   { to: "/docs",       label: "Docs",      icon: BookOpen },
@@ -37,7 +38,6 @@ const Layout = () => (
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <TxHistoryButton />
           <WalletButton />
         </div>
       </div>

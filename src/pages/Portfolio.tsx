@@ -13,6 +13,7 @@ import { useTxHistory, TxRecord } from "@/lib/txStore";
 import SyncBadge from "@/components/SyncBadge";
 import { toast } from "sonner";
 import SendTokenDialog from "@/components/SendTokenDialog";
+import TxHistoryButton from "@/components/TxHistoryButton";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -198,6 +199,7 @@ const Portfolio = () => {
         <div className="text-xs text-muted-foreground flex items-center gap-2">
           <SyncBadge />
           {indexState.lastUpdated && <span className="hidden sm:inline">{new Date(indexState.lastUpdated).toLocaleTimeString()}</span>}
+          <TxHistoryButton />
         </div>
       </div>
 

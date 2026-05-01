@@ -14,6 +14,15 @@ const WalletButton = () => {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
 
+  // IMPORTANT: hooks must run in the same order on every render. Keep this
+  // useEffect ABOVE any early-return so React doesn't throw #310 when account
+  // transitions from null → string after connect.
+  useEffect(() => {
+    if (account && !isCorrectChain) {
+      switchToIntegralayer().catch(() => {});
+    }
+  }, [account, isCorrectChain, switchToIntegralayer]);
+
   const onPick = async (id: WalletId) => {
     if (id === "walletconnect" && !WC_AVAILABLE) {
       toast.error("WalletConnect not configured", {
@@ -153,13 +162,6 @@ const WalletButton = () => {
       </>
     );
   }
-
-  // Auto-switch silently when wallet is on the wrong chain. No banner, no button.
-  useEffect(() => {
-    if (account && !isCorrectChain) {
-      switchToIntegralayer().catch(() => {});
-    }
-  }, [account, isCorrectChain, switchToIntegralayer]);
 
   return (
     <div className="relative">
