@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatUnits } from "ethers";
 import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, DollarSign, BarChart3, LineChart as LineIcon } from "lucide-react";
 import { explorerTx } from "@/lib/chain";
@@ -29,6 +29,49 @@ const Analytics = () => {
       .slice(0, 8),
     [pools],
   );
+
+  // ---- Range-filtered Volume + TVL bars per bucket ----
+  type Range = "24h" | "7d" | "30d";
+  const [range, setRange] = useState<Range>("24h");
+
+  const periodSeries = useMemo(() => {
+    const now = Date.now();
+    const cfg = {
+      "24h": { window: 24 * 60 * 60 * 1000, bucket: 60 * 60 * 1000, fmt: (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit" }) },
+      "7d":  { window: 7  * 24 * 60 * 60 * 1000, bucket: 24 * 60 * 60 * 1000, fmt: (t: number) => new Date(t).toLocaleDateString([], { weekday: "short" }) },
+      "30d": { window: 30 * 24 * 60 * 60 * 1000, bucket: 24 * 60 * 60 * 1000, fmt: (t: number) => new Date(t).toLocaleDateString([], { month: "short", day: "numeric" }) },
+    }[range];
+    const start = now - cfg.window;
+
+    // Init buckets
+    const buckets = new Map<number, { volume: number; swaps: number }>();
+    for (let t = Math.floor(start / cfg.bucket) * cfg.bucket; t <= now; t += cfg.bucket) {
+      buckets.set(t, { volume: 0, swaps: 0 });
+    }
+    for (const s of state.recentSwaps) {
+      const ts = s.ts ?? now;
+      if (ts < start) continue;
+      const k = Math.floor(ts / cfg.bucket) * cfg.bucket;
+      const cur = buckets.get(k) ?? { volume: 0, swaps: 0 };
+      cur.swaps += 1;
+      cur.volume += Number(formatUnits(s.amount0In + s.amount0Out, 18))
+                  + Number(formatUnits(s.amount1In + s.amount1Out, 18));
+      buckets.set(k, cur);
+    }
+    // Approximate TVL per bucket: current TVL scaled by relative activity (no historical reserves on-chain).
+    // We use cumulative volume share as a proxy so the chart is informative even without a snapshot service.
+    const sorted = Array.from(buckets.entries()).sort((a, b) => a[0] - b[0]);
+    const totalVolWindow = sorted.reduce((a, [, v]) => a + v.volume, 0) || 1;
+    let cumVol = 0;
+    return sorted.map(([t, v]) => {
+      cumVol += v.volume;
+      const tvlProxy = totalTVL * (totalVolWindow > 0 ? cumVol / totalVolWindow : 1);
+      return { t, label: cfg.fmt(t), volume: v.volume, swaps: v.swaps, tvl: tvlProxy };
+    });
+  }, [state.recentSwaps, range, totalTVL]);
+
+  const periodVol = periodSeries.reduce((a, b) => a + b.volume, 0);
+  const periodSwaps = periodSeries.reduce((a, b) => a + b.swaps, 0);
 
   // ---- DEX growth: cumulative swap count over time, bucketed by hour ----
   const growth = useMemo(() => {
@@ -110,6 +153,61 @@ const Analytics = () => {
 
       {/* Realtime price chart */}
       <PriceChart />
+
+      {/* === Volume + TVL by period (with range filter) === */}
+      <div className="glass rounded-2xl p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h2 className="font-bold flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary"/> Volume & TVL by period</h2>
+            <p className="text-[11px] text-muted-foreground">
+              {range === "24h" ? "Hourly buckets • last 24 hours" : range === "7d" ? "Daily buckets • last 7 days" : "Daily buckets • last 30 days"}
+            </p>
+          </div>
+          <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 text-xs">
+            {(["24h","7d","30d"] as const).map(r => (
+              <button key={r} onClick={() => setRange(r)}
+                className={`px-3 py-1.5 rounded-lg font-bold ${range===r ? "btn-primary-grad text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+          <PeriodStat label={`Volume (${range})`} value={periodVol.toLocaleString(undefined,{maximumFractionDigits:2})} />
+          <PeriodStat label={`Swaps (${range})`} value={String(periodSwaps)} />
+          <PeriodStat label="Current TVL" value={totalTVL.toLocaleString(undefined,{maximumFractionDigits:2})} highlight />
+        </div>
+        {periodSeries.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-10">No activity in this range yet.</p>
+        ) : (
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={periodSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="barVol" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                  </linearGradient>
+                  <linearGradient id="barTvl" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a78bfa" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.4}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3}/>
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd"/>
+                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={50}/>
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: any, n: any) => [Number(v).toLocaleString(undefined,{maximumFractionDigits:2}), n === "tvl" ? "TVL (proxy)" : "Volume"]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => v === "tvl" ? "TVL" : "Volume"} />
+                <Bar dataKey="volume" fill="url(#barVol)" radius={[6,6,0,0]} />
+                <Bar dataKey="tvl" fill="url(#barTvl)" radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
 
       {/* Bar chart: Top pairs by TVL vs Volume */}
       <div className="glass rounded-2xl p-5">
@@ -274,6 +372,13 @@ const MiniStat = ({ icon: Icon, label, value }: any) => (
       <Icon className="w-4 h-4 text-primary"/>
     </div>
     <div className="text-xl font-extrabold">{value}</div>
+  </div>
+);
+
+const PeriodStat = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <div className={`rounded-xl p-3 border ${highlight ? "bg-primary/10 border-primary/30" : "bg-card/40 border-border/60"}`}>
+    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+    <div className={`font-extrabold text-lg ${highlight ? "text-grad" : ""}`}>{value}</div>
   </div>
 );
 
