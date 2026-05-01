@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import Logo from "./Logo";
 import WalletButton from "./WalletButton";
 import NebulaBackground from "./NebulaBackground";
-import TxHistoryButton from "./TxHistoryButton";
+
 
 import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen, Home, Sprout } from "lucide-react";
 
@@ -37,7 +37,6 @@ const Layout = () => (
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <TxHistoryButton />
           <WalletButton />
         </div>
       </div>
