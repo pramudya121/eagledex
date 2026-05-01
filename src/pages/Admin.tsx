@@ -107,19 +107,27 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
   const [reward, setReward] = useState("");
   const [rpb, setRpb] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+
+  const validate = () => {
+    if (!signer) { toast.error("Connect wallet"); return false; }
+    if (!isAddress(staking)) { toast.error("Invalid staking token address"); return false; }
+    if (!isAddress(reward)) { toast.error("Invalid reward token address"); return false; }
+    try {
+      const v = parseUnits(rpb || "0", 18);
+      if (v <= 0n) { toast.error("rewardPerBlock must be > 0"); return false; }
+    } catch { toast.error("Invalid rewardPerBlock"); return false; }
+    return true;
+  };
 
   const submit = async () => {
-    if (!signer) return;
-    if (!isAddress(staking)) return toast.error("Invalid staking token address");
-    if (!isAddress(reward)) return toast.error("Invalid reward token address");
-    let rpbWei: bigint;
-    try { rpbWei = parseUnits(rpb || "0", 18); } catch { return toast.error("Invalid rewardPerBlock"); }
-    if (rpbWei <= 0n) return toast.error("rewardPerBlock must be > 0");
     setBusy(true);
     try {
+      const rpbWei = parseUnits(rpb, 18);
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx("Add farm pool", () => c.addPool(staking, reward, rpbWei));
       setStaking(""); setReward(""); setRpb("");
+      setConfirm(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
