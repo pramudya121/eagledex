@@ -15,6 +15,8 @@ import Portfolio from "./pages/Portfolio";
 import Docs from "./pages/Docs";
 import Farming from "./pages/Farming";
 import Admin from "./pages/Admin";
+import Faucet from "./pages/Faucet";
+import AdminFaucet from "./pages/AdminFaucet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,7 +38,9 @@ const App = () => (
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/farming" element={<Farming />} />
+                <Route path="/faucet" element={<Faucet />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/faucet" element={<AdminFaucet />} />
                 <Route path="/docs" element={<Docs />} />
               </Route>
               <Route path="*" element={<NotFound />} />
