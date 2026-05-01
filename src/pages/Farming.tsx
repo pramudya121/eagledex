@@ -350,6 +350,35 @@ const HeroStat = ({ icon: Icon, label, value, accent }: any) => (
   </div>
 );
 
+const tokenLogoFor = (address: string): string | null => {
+  const t = TOKENS.find(x => x.address.toLowerCase() === address.toLowerCase());
+  return t?.logo ?? null;
+};
+
+const TokenLogo = ({ address, symbol, size = 44 }: { address: string; symbol: string; size?: number }) => {
+  const src = tokenLogoFor(address);
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={symbol}
+        width={size}
+        height={size}
+        style={{ width: size, height: size }}
+        className="rounded-full ring-2 ring-primary/30 shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.5)] bg-card object-cover"
+      />
+    );
+  }
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="rounded-full btn-primary-grad grid place-items-center text-primary-foreground font-extrabold ring-2 ring-primary/30 text-xs"
+    >
+      {symbol.slice(0, 2).toUpperCase()}
+    </div>
+  );
+};
+
 const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
   pool: FarmPool; currentBlock: bigint; onAction: () => void; onChanged: () => void;
 }) => {
