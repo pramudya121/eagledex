@@ -375,4 +375,11 @@ const MiniStat = ({ icon: Icon, label, value }: any) => (
   </div>
 );
 
+const PeriodStat = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <div className={`rounded-xl p-3 border ${highlight ? "bg-primary/10 border-primary/30" : "bg-card/40 border-border/60"}`}>
+    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+    <div className={`font-extrabold text-lg ${highlight ? "text-grad" : ""}`}>{value}</div>
+  </div>
+);
+
 export default Analytics;
