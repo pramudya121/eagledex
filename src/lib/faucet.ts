@@ -1,12 +1,14 @@
 import { Contract, JsonRpcProvider, JsonRpcSigner } from "ethers";
-import { CONTRACTS } from "./chain";
+import { CONTRACTS, TOKENS, NATIVE_TOKEN } from "./chain";
 import { FAUCET_ABI, ERC20_ABI } from "./abis";
 
 export type FaucetTokenInfo = {
   index: number;
   address: string;
   symbol: string;
+  name: string;
   decimals: number;
+  logo: string;
   claimAmount: bigint;
   maxClaims: bigint;
   faucetBalance: bigint;
@@ -14,21 +16,35 @@ export type FaucetTokenInfo = {
   userLastClaimed: bigint; // unix seconds
 };
 
+/** Look up a token in the EAGLEDEX registry by address. WIRL maps to native logo/symbol. */
+function registryLookup(addr: string) {
+  const a = addr.toLowerCase();
+  // WIRL (wrapped IRL) → display as WIRL with native IRL logo
+  if (a === CONTRACTS.WETH.toLowerCase()) {
+    return { symbol: "WIRL", name: "Wrapped IRL", decimals: 18, logo: NATIVE_TOKEN.logo };
+  }
+  const t = TOKENS.find(x => x.address.toLowerCase() === a);
+  return t ? { symbol: t.symbol, name: t.name, decimals: t.decimals, logo: t.logo } : null;
+}
+
 export function getFaucet(runner: JsonRpcProvider | JsonRpcSigner) {
   return new Contract(CONTRACTS.FAUCET, FAUCET_ABI, runner);
 }
 
-const meta = new Map<string, { symbol: string; decimals: number }>();
+const meta = new Map<string, { symbol: string; name: string; decimals: number; logo: string }>();
 async function tokenMeta(addr: string, p: JsonRpcProvider) {
   const k = addr.toLowerCase();
   if (meta.has(k)) return meta.get(k)!;
+  // Prefer EAGLEDEX registry (gives proper logo + WIRL relabeling) before hitting RPC.
+  const reg = registryLookup(addr);
+  if (reg) { meta.set(k, reg); return reg; }
   try {
     const c = new Contract(addr, ERC20_ABI, p);
-    const [s, d] = await Promise.all([c.symbol(), c.decimals()]);
-    const m = { symbol: String(s), decimals: Number(d) };
+    const [s, n, d] = await Promise.all([c.symbol(), c.name().catch(() => ""), c.decimals()]);
+    const m = { symbol: String(s), name: String(n || s), decimals: Number(d), logo: "" };
     meta.set(k, m); return m;
   } catch {
-    const m = { symbol: addr.slice(0, 6), decimals: 18 };
+    const m = { symbol: addr.slice(0, 6), name: addr, decimals: 18, logo: "" };
     meta.set(k, m); return m;
   }
 }
@@ -57,7 +73,7 @@ export async function readFaucetTokens(
     ]);
     out.push({
       index: i, address: addr,
-      symbol: m.symbol, decimals: m.decimals,
+      symbol: m.symbol, name: m.name, decimals: m.decimals, logo: m.logo,
       claimAmount, maxClaims, faucetBalance, userClaimed, userLastClaimed,
     });
   }

@@ -163,17 +163,27 @@ const WalletButton = () => {
     );
   }
 
+  const balShort = (() => {
+    const n = Number(nativeBalance);
+    if (!isFinite(n)) return "0";
+    if (n >= 1000) return n.toFixed(0);
+    if (n >= 1) return n.toFixed(2);
+    return n.toFixed(4);
+  })();
+
   return (
     <div className="relative shrink-0">
       <Button
         onClick={() => setMenu(v => !v)}
         variant="outline"
         size="sm"
-        title={`${Number(nativeBalance).toFixed(4)} IRL · ${account}`}
-        className="rounded-full h-9 px-3 border-border bg-card/60 backdrop-blur gap-1.5"
+        title={`${Number(nativeBalance).toFixed(6)} IRL · ${account}`}
+        className="rounded-full h-9 pl-2 pr-1 border-border bg-card/60 backdrop-blur gap-1.5"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
-        <span className="font-mono text-xs font-semibold">{short(account)}</span>
+        <span className="font-mono text-[11px] font-bold tabular-nums text-foreground/90 hidden sm:inline">{balShort}</span>
+        <span className="text-[10px] font-bold text-muted-foreground hidden sm:inline">IRL</span>
+        <span className="font-mono text-xs font-semibold rounded-full bg-secondary/60 px-2 py-0.5 ml-0.5">{short(account)}</span>
       </Button>
       {menu && (
         <div className="absolute right-0 top-full mt-2 w-60 glass rounded-xl p-2 z-50 animate-fade-in">

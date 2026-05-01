@@ -208,8 +208,14 @@ const Faucet = () => {
                 <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/10 blur-2xl group-hover:from-cyan-500/40 transition" />
 
                 <div className="relative flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-fuchsia-500 grid place-items-center text-white font-extrabold shadow-[0_8px_20px_-8px_hsl(195_90%_55%/0.6)]">
-                    {t.symbol.slice(0, 2).toUpperCase()}
+                  <div className="w-12 h-12 rounded-2xl bg-card border border-border/60 grid place-items-center overflow-hidden shadow-[0_8px_20px_-8px_hsl(195_90%_55%/0.4)]">
+                    {t.logo ? (
+                      <img src={t.logo} alt={t.symbol} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full grid place-items-center bg-gradient-to-br from-cyan-400 to-fuchsia-500 text-white font-extrabold">
+                        {t.symbol.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
