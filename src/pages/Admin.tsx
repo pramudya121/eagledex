@@ -8,6 +8,7 @@ import { FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool } from "@/lib/farm";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const Admin = () => {
   const { account, signer, readProvider } = useWeb3();
