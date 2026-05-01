@@ -164,15 +164,23 @@ const WalletButton = () => {
   }
 
   return (
-    <div className="relative">
-      <Button onClick={() => setMenu(v => !v)} variant="outline" className="rounded-xl border-border bg-card/60 backdrop-blur">
-        <span className="w-2 h-2 rounded-full bg-[hsl(var(--success))] mr-2 animate-pulse" />
-        <span className="font-mono text-xs">{Number(nativeBalance).toFixed(3)} IRL</span>
-        <span className="mx-2 opacity-30">|</span>
-        <span className="font-semibold">{short(account)}</span>
+    <div className="relative shrink-0">
+      <Button
+        onClick={() => setMenu(v => !v)}
+        variant="outline"
+        size="sm"
+        title={`${Number(nativeBalance).toFixed(4)} IRL · ${account}`}
+        className="rounded-full h-9 px-3 border-border bg-card/60 backdrop-blur gap-1.5"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
+        <span className="font-mono text-xs font-semibold">{short(account)}</span>
       </Button>
       {menu && (
-        <div className="absolute right-0 top-full mt-2 w-56 glass rounded-xl p-2 z-50 animate-fade-in">
+        <div className="absolute right-0 top-full mt-2 w-60 glass rounded-xl p-2 z-50 animate-fade-in">
+          <div className="px-3 py-2 border-b border-border/40 mb-1">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Balance</div>
+            <div className="font-mono text-sm font-bold">{Number(nativeBalance).toFixed(4)} <span className="text-muted-foreground">IRL</span></div>
+          </div>
           <a href={explorerAddr(account)} target="_blank" rel="noreferrer"
              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary/10 text-sm">
             <ExternalLink className="w-4 h-4" /> View on Explorer

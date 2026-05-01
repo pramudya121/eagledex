@@ -6,7 +6,7 @@ import {
   AlertTriangle, ShieldCheck, Settings, ExternalLink, Wallet, Search, Gift,
 } from "lucide-react";
 import { isWalletInstalled, useWeb3, WALLETS } from "@/lib/web3";
-import { CONTRACTS, explorerAddr } from "@/lib/chain";
+import { CONTRACTS, explorerAddr, TOKENS } from "@/lib/chain";
 import { ERC20_ABI, FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool, computePendingLocal } from "@/lib/farm";
 import { subscribeFarmEvents, refetchPoolForUser } from "@/lib/farmEvents";
@@ -350,6 +350,35 @@ const HeroStat = ({ icon: Icon, label, value, accent }: any) => (
   </div>
 );
 
+const tokenLogoFor = (address: string): string | null => {
+  const t = TOKENS.find(x => x.address.toLowerCase() === address.toLowerCase());
+  return t?.logo ?? null;
+};
+
+const TokenLogo = ({ address, symbol, size = 44 }: { address: string; symbol: string; size?: number }) => {
+  const src = tokenLogoFor(address);
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={symbol}
+        width={size}
+        height={size}
+        style={{ width: size, height: size }}
+        className="rounded-full ring-2 ring-primary/30 shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.5)] bg-card object-cover"
+      />
+    );
+  }
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="rounded-full btn-primary-grad grid place-items-center text-primary-foreground font-extrabold ring-2 ring-primary/30 text-xs"
+    >
+      {symbol.slice(0, 2).toUpperCase()}
+    </div>
+  );
+};
+
 const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
   pool: FarmPool; currentBlock: bigint; onAction: () => void; onChanged: () => void;
 }) => {
@@ -394,18 +423,16 @@ const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
       <div className="relative">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-2xl btn-primary-grad grid place-items-center shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)]"
-              style={{ transform: "rotateY(-15deg)", transformStyle: "preserve-3d" }}
-            >
-              <Sprout className="w-6 h-6 text-primary-foreground"/>
-            </div>
+            <TokenLogo address={pool.stakingToken} symbol={pool.stakingSymbol} />
             <div>
               <div className="font-extrabold text-lg leading-none flex items-center gap-2">
                 {pool.stakingSymbol}
                 <span className="text-[10px] font-mono text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded">#{pool.pid}</span>
               </div>
-              <div className="text-[11px] text-muted-foreground">Stake → earn {pool.rewardSymbol}</div>
+              <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                Stake → earn {pool.rewardSymbol}
+                <TokenLogo address={pool.rewardToken} symbol={pool.rewardSymbol} size={14} />
+              </div>
             </div>
           </div>
           <div className="text-right">

@@ -1,14 +1,14 @@
 import logo from "@/assets/eagle-logo.png";
 
-const Logo = ({ size = 36 }: { size?: number }) => (
-  <div className="flex items-center gap-2.5">
+const Logo = ({ size = 32 }: { size?: number }) => (
+  <div className="flex items-center gap-2 shrink-0">
     <img src={logo} alt="EAGLEDEX" width={size} height={size}
-      className="animate-pulse-glow" style={{ width: size, height: size }} />
-    <div className="leading-none">
-      <div className="font-extrabold tracking-tight text-lg">
+      className="animate-pulse-glow shrink-0" style={{ width: size, height: size }} />
+    <div className="leading-none hidden sm:block">
+      <div className="font-extrabold tracking-tight text-base">
         EAGLE<span className="text-grad">DEX</span>
       </div>
-      <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Integralayer Testnet</div>
+      <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground hidden lg:block">Integralayer Testnet</div>
     </div>
   </div>
 );

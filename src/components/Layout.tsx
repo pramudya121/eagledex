@@ -23,8 +23,8 @@ const Layout = () => (
     <NebulaBackground />
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/40 border-b border-border/40">
       
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <NavLink to="/"><Logo /></NavLink>
+      <div className="container mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
+        <NavLink to="/" className="shrink-0"><Logo /></NavLink>
         <nav className="hidden md:flex items-center gap-1 glass rounded-full p-1">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to}
