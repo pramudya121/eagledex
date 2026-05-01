@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useWeb3, WALLETS, WalletId, isWalletInstalled, WC_AVAILABLE } from "@/lib/web3";
@@ -154,10 +154,12 @@ const WalletButton = () => {
     );
   }
 
-  // Wrong chain → silently auto-switch/add. UI stays clean.
-  if (!isCorrectChain) {
-    switchToIntegralayer().catch(() => {});
-  }
+  // Auto-switch silently when wallet is on the wrong chain. No banner, no button.
+  useEffect(() => {
+    if (account && !isCorrectChain) {
+      switchToIntegralayer().catch(() => {});
+    }
+  }, [account, isCorrectChain, switchToIntegralayer]);
 
   return (
     <div className="relative">
