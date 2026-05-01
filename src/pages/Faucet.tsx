@@ -36,6 +36,9 @@ const Faucet = () => {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { const t = setInterval(() => load(), 30_000); return () => clearInterval(t); }, [load]);
+
+  const refresh = async () => { setRefreshing(true); await load(); };
 
   const claim = async (idx: number) => {
     if (!signer) return;
@@ -56,6 +59,30 @@ const Faucet = () => {
       await load();
     } catch {} finally { setBusyAll(false); }
   };
+
+  const addToWallet = async (t: FaucetTokenInfo) => {
+    try {
+      const eth: any = (window as any).ethereum;
+      if (!eth?.request) { toast.error("No injected wallet detected"); return; }
+      await eth.request({
+        method: "wallet_watchAsset",
+        params: { type: "ERC20", options: { address: t.address, symbol: t.symbol, decimals: t.decimals } },
+      });
+      toast.success(`Added ${t.symbol} to wallet`);
+    } catch {}
+  };
+
+  const copyAddr = async (addr: string) => {
+    try { await navigator.clipboard.writeText(addr); toast.success("Address copied"); } catch {}
+  };
+
+  const allReadyAt = tokens.length === 0 ? 0 : Math.max(...tokens.map(t => nextClaimAt(t.userLastClaimed, cooldown)));
+  const allCdLeft = Math.max(0, allReadyAt - now);
+  const anyClaimable = tokens.some(t => {
+    const cdLeft = Math.max(0, nextClaimAt(t.userLastClaimed, cooldown) - now);
+    const exhausted = t.maxClaims > 0n && t.userClaimed >= t.maxClaims;
+    return cdLeft === 0 && !exhausted && t.faucetBalance >= t.claimAmount;
+  });
 
   const totalAvailable = tokens.reduce((a, t) => a + Number(formatUnits(t.faucetBalance, t.decimals)), 0);
 
