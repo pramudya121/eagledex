@@ -441,20 +441,38 @@ const FarmActionDialog = ({ pool, onClose, onChanged }: { pool: FarmPool; onClos
   const myBalance = pool.userBalance ?? 0n;
   const allow = pool.userAllowance ?? 0n;
 
-  const parsed = useMemo(() => {
-    try { return amt ? parseUnits(amt, pool.stakingDecimals) : 0n; } catch { return 0n; }
-  }, [amt, pool.stakingDecimals]);
+  const max = mode === "stake" ? myBalance : myStake;
+  const maxLabel = mode === "stake" ? `${pool.stakingSymbol} balance` : `staked ${pool.stakingSymbol}`;
+
+  // Strict validation: decimals, positivity, max, NaN/Infinity, scientific notation.
+  const validation = useMemo(
+    () => validateAmount(amt, pool.stakingDecimals, { symbol: maxLabel, max }),
+    [amt, pool.stakingDecimals, maxLabel, max],
+  );
+  const parsed = validation.value ?? 0n;
+  const inputError = amt.trim() !== "" && !validation.ok ? validation.error : undefined;
 
   const needApprove = mode === "stake" && parsed > 0n && allow < parsed;
 
   const submit = async () => {
     if (!signer || !account) return;
-    if (parsed <= 0n) return toast.error("Enter an amount");
-    if (mode === "stake" && parsed > myBalance) return toast.error("Insufficient balance");
-    if (mode === "unstake" && parsed > myStake) return toast.error("Exceeds your stake");
+    if (!validation.ok) return toast.error(validation.error ?? "Invalid amount");
     setBusy(true);
     try {
-      const FARM_ABI = (await import("@/lib/abis")).FARM_ABI;
+      const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
+      if (mode === "stake") {
+        if (needApprove) {
+          const erc = new Contract(pool.stakingToken, ERC20_ABI, signer);
+          await sendTx(`Approve ${pool.stakingSymbol}`, () => erc.approve(CONTRACTS.FARM, (1n << 255n)));
+        }
+        await sendTx(`Stake ${pool.stakingSymbol}`, () => c.deposit(pool.pid, parsed));
+      } else {
+        await sendTx(`Unstake ${pool.stakingSymbol}`, () => c.withdraw(pool.pid, parsed));
+      }
+      onChanged();
+      onClose();
+    } catch {} finally { setBusy(false); }
+  };
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       if (mode === "stake") {
         if (needApprove) {
