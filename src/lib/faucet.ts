@@ -31,17 +31,20 @@ export function getFaucet(runner: JsonRpcProvider | JsonRpcSigner) {
   return new Contract(CONTRACTS.FAUCET, FAUCET_ABI, runner);
 }
 
-const meta = new Map<string, { symbol: string; decimals: number }>();
+const meta = new Map<string, { symbol: string; name: string; decimals: number; logo: string }>();
 async function tokenMeta(addr: string, p: JsonRpcProvider) {
   const k = addr.toLowerCase();
   if (meta.has(k)) return meta.get(k)!;
+  // Prefer EAGLEDEX registry (gives proper logo + WIRL relabeling) before hitting RPC.
+  const reg = registryLookup(addr);
+  if (reg) { meta.set(k, reg); return reg; }
   try {
     const c = new Contract(addr, ERC20_ABI, p);
-    const [s, d] = await Promise.all([c.symbol(), c.decimals()]);
-    const m = { symbol: String(s), decimals: Number(d) };
+    const [s, n, d] = await Promise.all([c.symbol(), c.name().catch(() => ""), c.decimals()]);
+    const m = { symbol: String(s), name: String(n || s), decimals: Number(d), logo: "" };
     meta.set(k, m); return m;
   } catch {
-    const m = { symbol: addr.slice(0, 6), decimals: 18 };
+    const m = { symbol: addr.slice(0, 6), name: addr, decimals: 18, logo: "" };
     meta.set(k, m); return m;
   }
 }
@@ -70,7 +73,7 @@ export async function readFaucetTokens(
     ]);
     out.push({
       index: i, address: addr,
-      symbol: m.symbol, decimals: m.decimals,
+      symbol: m.symbol, name: m.name, decimals: m.decimals, logo: m.logo,
       claimAmount, maxClaims, faucetBalance, userClaimed, userLastClaimed,
     });
   }
