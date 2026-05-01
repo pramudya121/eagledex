@@ -72,3 +72,26 @@ export async function readTokenMeta(addr: string, runner: JsonRpcProvider) {
     return m;
   }
 }
+
+const ACC_PRECISION = 10n ** 12n;
+
+/**
+ * Mirrors the contract's pendingReward() math so the UI can tick rewards
+ * forward between RPC calls without spamming the node.
+ *
+ *   acc = pool.accRewardPerShare
+ *   if (block > lastRewardBlock && totalStaked > 0):
+ *       acc += (block - lastRewardBlock) * rewardPerBlock * 1e12 / totalStaked
+ *   pending = user.amount * acc / 1e12 - user.rewardDebt
+ */
+export function computePendingLocal(p: FarmPool, currentBlock: bigint): bigint {
+  if (!p.userStaked || p.userStaked === 0n) return p.pending ?? 0n;
+  let acc = p.accRewardPerShare;
+  if (currentBlock > p.lastRewardBlock && p.totalStaked > 0n) {
+    const blocks = currentBlock - p.lastRewardBlock;
+    acc = acc + (blocks * p.rewardPerBlock * ACC_PRECISION) / p.totalStaked;
+  }
+  const debt = p.userRewardDebt ?? 0n;
+  const pending = (p.userStaked * acc) / ACC_PRECISION - debt;
+  return pending > 0n ? pending : 0n;
+}
