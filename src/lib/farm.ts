@@ -17,8 +17,10 @@ export type FarmPool = PoolInfoRaw & {
   stakingDecimals: number;
   rewardSymbol: string;
   rewardDecimals: number;
+  rewardReserve?: bigint;       // reward-token balance held by the farm contract
   pending?: bigint;
   userStaked?: bigint;
+  userRewardDebt?: bigint;
   userAllowance?: bigint;
   userBalance?: bigint;
 };
