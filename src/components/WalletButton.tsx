@@ -154,12 +154,9 @@ const WalletButton = () => {
     );
   }
 
+  // Wrong chain → silently auto-switch/add. UI stays clean.
   if (!isCorrectChain) {
-    return (
-      <Button onClick={switchToIntegralayer} variant="destructive" className="rounded-xl">
-        <AlertTriangle className="w-4 h-4 mr-2" /> Switch to Integralayer
-      </Button>
-    );
+    switchToIntegralayer().catch(() => {});
   }
 
   return (
