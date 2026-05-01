@@ -17,7 +17,7 @@ import { FarmHistory } from "@/components/FarmHistory";
 import { validateAmount } from "@/lib/validate";
 
 const Farming = () => {
-  const { account, signer, readProvider } = useWeb3();
+  const { isReady, account, signer, readProvider } = useWeb3();
   const [pools, setPools] = useState<FarmPool[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -27,6 +27,10 @@ const Farming = () => {
   const isOwner = !!(owner && account && owner.toLowerCase() === account.toLowerCase());
 
   const farmRead = useMemo(() => getFarm(readProvider), [readProvider]);
+
+  if (!isReady) {
+    return <FarmingFallback />;
+  }
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -296,6 +300,23 @@ const Farming = () => {
     </div>
   );
 };
+
+const FarmingFallback = () => (
+  <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+    <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/20 via-card/60 to-transparent p-8 min-h-[320px] grid place-items-center text-center">
+      <div className="absolute inset-0 pointer-events-none bg-primary/5" />
+      <div className="relative max-w-md">
+        <div className="w-16 h-16 mx-auto rounded-2xl btn-primary-grad grid place-items-center mb-4">
+          <Loader2 className="w-7 h-7 text-primary-foreground animate-spin" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-grad">Loading Farming</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          Menyiapkan provider RPC dan status wallet agar data pool bisa dimuat dengan aman.
+        </p>
+      </div>
+    </div>
+  </div>
+);
 
 const HeroStat = ({ icon: Icon, label, value, accent }: any) => (
   <div className={`rounded-xl p-3 backdrop-blur-md border ${accent ? "bg-primary/15 border-primary/40" : "bg-card/60 border-border/60"}`}>
