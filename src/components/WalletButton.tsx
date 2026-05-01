@@ -181,8 +181,8 @@ const WalletButton = () => {
         className="rounded-full h-9 pl-2 pr-1 border-border bg-card/60 backdrop-blur gap-1.5"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
-        <span className="font-mono text-[11px] font-bold tabular-nums text-foreground/90 hidden xs:inline">{balShort}</span>
-        <span className="text-[10px] font-bold text-muted-foreground hidden xs:inline">IRL</span>
+        <span className="font-mono text-[11px] font-bold tabular-nums text-foreground/90 hidden sm:inline">{balShort}</span>
+        <span className="text-[10px] font-bold text-muted-foreground hidden sm:inline">IRL</span>
         <span className="font-mono text-xs font-semibold rounded-full bg-secondary/60 px-2 py-0.5 ml-0.5">{short(account)}</span>
       </Button>
       {menu && (
