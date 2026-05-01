@@ -3,12 +3,12 @@ import { Contract, formatUnits, parseUnits } from "ethers";
 import { toast } from "sonner";
 import {
   Sprout, Loader2, RefreshCw, TrendingUp, Coins, Zap, Lock, Unlock,
-  AlertTriangle, ShieldCheck, Settings, ExternalLink, Wallet,
+  AlertTriangle, ShieldCheck, Settings, ExternalLink, Wallet, Search, Gift,
 } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
-import { ERC20_ABI } from "@/lib/abis";
-import { getFarm, readAllPools, readTokenMeta, FarmPool } from "@/lib/farm";
+import { ERC20_ABI, FARM_ABI } from "@/lib/abis";
+import { getFarm, readAllPools, readTokenMeta, FarmPool, computePendingLocal } from "@/lib/farm";
 import { subscribeFarmEvents } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
@@ -34,12 +34,14 @@ const Farming = () => {
       if (own) setOwner(own);
       const raws = await readAllPools(farmRead);
       const enriched: FarmPool[] = await Promise.all(raws.map(async (r, pid) => {
-        const [s, rew] = await Promise.all([
+        const [s, rew, rewardReserve] = await Promise.all([
           readTokenMeta(r.stakingToken, readProvider),
           readTokenMeta(r.rewardToken, readProvider),
+          new Contract(r.rewardToken, ERC20_ABI, readProvider).balanceOf(CONTRACTS.FARM).catch(() => 0n),
         ]);
         let pending: bigint | undefined;
         let userStaked: bigint | undefined;
+        let userRewardDebt: bigint | undefined;
         let userAllowance: bigint | undefined;
         let userBalance: bigint | undefined;
         if (account) {
@@ -50,14 +52,18 @@ const Farming = () => {
               new Contract(r.stakingToken, ERC20_ABI, readProvider).allowance(account, CONTRACTS.FARM),
               new Contract(r.stakingToken, ERC20_ABI, readProvider).balanceOf(account),
             ]);
-            pending = pend; userStaked = ui.amount ?? ui[0]; userAllowance = allow; userBalance = bal;
+            pending = pend;
+            userStaked = ui.amount ?? ui[0];
+            userRewardDebt = ui.rewardDebt ?? ui[1];
+            userAllowance = allow; userBalance = bal;
           } catch {}
         }
         return {
           pid, ...r,
           stakingSymbol: s.symbol, stakingDecimals: s.decimals,
           rewardSymbol: rew.symbol, rewardDecimals: rew.decimals,
-          pending, userStaked, userAllowance, userBalance,
+          rewardReserve,
+          pending, userStaked, userRewardDebt, userAllowance, userBalance,
         };
       }));
       setPools(enriched);
@@ -88,14 +94,58 @@ const Farming = () => {
     return off;
   }, [readProvider, load, account]);
 
+  // Live block ticker — drives a smooth pendingReward counter on each card.
+  const [currentBlock, setCurrentBlock] = useState<bigint>(0n);
+  useEffect(() => {
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const b = await readProvider.getBlockNumber();
+        if (!cancelled) setCurrentBlock(BigInt(b));
+      } catch {}
+    };
+    tick();
+    const t = setInterval(tick, 4_000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [readProvider]);
+
+  // Search by symbol or address
+  const [query, setQuery] = useState("");
   const visible = useMemo(() => {
-    if (tab === "staked") return pools.filter(p => (p.userStaked ?? 0n) > 0n || (p.pending ?? 0n) > 0n);
-    return pools;
-  }, [pools, tab]);
+    let list = pools;
+    if (tab === "staked") list = list.filter(p => (p.userStaked ?? 0n) > 0n || (p.pending ?? 0n) > 0n);
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(p =>
+        p.stakingSymbol.toLowerCase().includes(q) ||
+        p.rewardSymbol.toLowerCase().includes(q) ||
+        p.stakingToken.toLowerCase().includes(q) ||
+        p.rewardToken.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [pools, tab, query]);
 
   const totalStakedAcrossPools = pools.reduce((a, p) => a + Number(formatUnits(p.totalStaked, p.stakingDecimals)), 0);
   const myActivePools = pools.filter(p => (p.userStaked ?? 0n) > 0n).length;
   const myPendingTotal = pools.reduce((a, p) => a + Number(formatUnits(p.pending ?? 0n, p.rewardDecimals)), 0);
+
+  const harvestablePids = pools.filter(p => (p.pending ?? 0n) > 0n).map(p => p.pid);
+  const [harvestingAll, setHarvestingAll] = useState(false);
+  const harvestAll = async () => {
+    if (!signer || !harvestablePids.length) return;
+    setHarvestingAll(true);
+    try {
+      const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
+      for (const pid of harvestablePids) {
+        try {
+          await sendTx(`Harvest pool #${pid}`, () => c.deposit(pid, 0n));
+        } catch { /* keep going to next pool */ }
+      }
+      load();
+      setHistoryKey(k => k + 1);
+    } finally { setHarvestingAll(false); }
+  };
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
@@ -156,7 +206,20 @@ const Farming = () => {
             </button>
           ))}
         </div>
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"/>
+          <Input value={query} onChange={e => setQuery(e.target.value)}
+            placeholder="Search symbol or 0x…"
+            className="h-9 pl-9 text-xs bg-card border-border"/>
+        </div>
         <div className="ml-auto flex items-center gap-2">
+          {harvestablePids.length > 0 && (
+            <button onClick={harvestAll} disabled={harvestingAll}
+              className="px-3 py-2 rounded-lg btn-primary-grad text-primary-foreground text-xs font-bold flex items-center gap-1.5 disabled:opacity-60">
+              {harvestingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Gift className="w-3.5 h-3.5"/>}
+              Harvest all ({harvestablePids.length})
+            </button>
+          )}
           <button onClick={load} disabled={refreshing}
             className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}/> Refresh
@@ -178,18 +241,21 @@ const Farming = () => {
             <Sprout className="w-7 h-7 text-primary-foreground"/>
           </div>
           <h3 className="text-2xl font-extrabold tracking-tight mb-1">
-            {tab === "staked" ? "No active stakes yet" : "No farms yet"}
+            {query ? "No matches" : tab === "staked" ? "No active stakes yet" : "No farms yet"}
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            {tab === "staked"
-              ? "Stake into a pool to start earning rewards every block."
-              : "The contract owner hasn't added any pools yet. Check back soon."}
+            {query
+              ? "Try a different symbol or address."
+              : tab === "staked"
+                ? "Stake into a pool to start earning rewards every block."
+                : "The contract owner hasn't added any pools yet. Check back soon."}
           </p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {visible.map(p => (
-            <FarmCard key={p.pid} pool={p} onAction={() => setActivePid(p.pid)} onChanged={load} />
+            <FarmCard key={p.pid} pool={p} currentBlock={currentBlock}
+              onAction={() => setActivePid(p.pid)} onChanged={load} />
           ))}
         </div>
       )}
@@ -217,21 +283,40 @@ const HeroStat = ({ icon: Icon, label, value, accent }: any) => (
   </div>
 );
 
-const FarmCard = ({ pool, onAction, onChanged }: { pool: FarmPool; onAction: () => void; onChanged: () => void }) => {
+const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
+  pool: FarmPool; currentBlock: bigint; onAction: () => void; onChanged: () => void;
+}) => {
   const { account, signer } = useWeb3();
   const total = Number(formatUnits(pool.totalStaked, pool.stakingDecimals));
   const rpb = Number(formatUnits(pool.rewardPerBlock, pool.rewardDecimals));
   const myStake = Number(formatUnits(pool.userStaked ?? 0n, pool.stakingDecimals));
-  const pending = Number(formatUnits(pool.pending ?? 0n, pool.rewardDecimals));
+
+  // Live ticker: recompute pending locally as new blocks come in.
+  const livePendingWei = useMemo(
+    () => (currentBlock > 0n ? computePendingLocal(pool, currentBlock) : (pool.pending ?? 0n)),
+    [pool, currentBlock],
+  );
+  const pending = Number(formatUnits(livePendingWei, pool.rewardDecimals));
+
+  // Reward liquidity: how much reward token the contract can pay out right now.
+  const reserve = Number(formatUnits(pool.rewardReserve ?? 0n, pool.rewardDecimals));
+  const lowReserve = (pool.rewardReserve ?? 0n) > 0n
+    ? livePendingWei > (pool.rewardReserve ?? 0n)
+    : (pool.rewardReserve === 0n);
 
   // rough APR using ~2s blocks → ~15.7M blocks/year. Treats 1 stake = 1 reward unit.
-  // This is an approximation; for prod you'd plug in oracle prices.
   const BLOCKS_PER_YEAR = 15_768_000;
   const apr = total > 0 ? (rpb * BLOCKS_PER_YEAR / total) * 100 : 0;
 
   const harvest = async () => {
     if (!signer) return toast.error("Connect wallet");
-    const c = new Contract(CONTRACTS.FARM, (await import("@/lib/abis")).FARM_ABI, signer);
+    if (lowReserve) {
+      toast.error("Insufficient reward liquidity", {
+        description: `Farm contract holds only ${reserve} ${pool.rewardSymbol}. Ask admin to top up.`,
+      });
+      return;
+    }
+    const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
     await sendTx(`Harvest ${pool.rewardSymbol}`, () => c.deposit(pool.pid, 0n));
     onChanged();
   };
@@ -249,7 +334,10 @@ const FarmCard = ({ pool, onAction, onChanged }: { pool: FarmPool; onAction: () 
               <Sprout className="w-6 h-6 text-primary-foreground"/>
             </div>
             <div>
-              <div className="font-extrabold text-lg leading-none">{pool.stakingSymbol}</div>
+              <div className="font-extrabold text-lg leading-none flex items-center gap-2">
+                {pool.stakingSymbol}
+                <span className="text-[10px] font-mono text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded">#{pool.pid}</span>
+              </div>
               <div className="text-[11px] text-muted-foreground">Stake → earn {pool.rewardSymbol}</div>
             </div>
           </div>
@@ -277,9 +365,24 @@ const FarmCard = ({ pool, onAction, onChanged }: { pool: FarmPool; onAction: () 
           </div>
           <div className="flex justify-between text-xs mt-1">
             <span className="text-muted-foreground">Pending</span>
-            <span className="font-mono font-bold text-grad">{pending.toLocaleString(undefined,{maximumFractionDigits:6})} {pool.rewardSymbol}</span>
+            <span className="font-mono font-bold text-grad tabular-nums">
+              {pending.toLocaleString(undefined,{maximumFractionDigits:8})} {pool.rewardSymbol}
+            </span>
+          </div>
+          <div className="flex justify-between text-[10px] mt-1 text-muted-foreground">
+            <span>Reward reserve</span>
+            <span className={`font-mono ${lowReserve ? "text-red-400" : ""}`}>
+              {reserve.toLocaleString(undefined,{maximumFractionDigits:4})} {pool.rewardSymbol}
+            </span>
           </div>
         </div>
+
+        {lowReserve && pool.userStaked && pool.userStaked > 0n && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 mb-2 flex items-center gap-1.5 text-[11px] text-red-300">
+            <AlertTriangle className="w-3 h-3 shrink-0"/>
+            Low reward liquidity — harvest may revert.
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <button onClick={onAction}
