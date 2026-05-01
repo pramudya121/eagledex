@@ -164,6 +164,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
   const tvl = poolTVL(p);
   const price = poolPrice(p);
   const vol = poolVolume(p);
+  const vol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
   return (
     <div className="glass rounded-2xl p-5 hover:border-primary/60 transition-all hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-transparent">
       <div className="flex items-center gap-2 mb-4">
@@ -183,8 +184,8 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
           <div className="font-bold text-grad text-sm font-mono">{tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
         </div>
         <div className="rounded-xl bg-secondary/40 p-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Volume</div>
-          <div className="font-bold text-sm font-mono">{vol.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Vol 24h</div>
+          <div className="font-bold text-sm font-mono">{vol24.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
         </div>
       </div>
 
@@ -192,6 +193,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
         <div className="flex justify-between"><span className="text-muted-foreground">{p.symbol0}</span><span className="font-mono">{Number(formatUnits(p.reserve0, p.decimals0)).toLocaleString(undefined,{maximumFractionDigits:4})}</span></div>
         <div className="flex justify-between"><span className="text-muted-foreground">{p.symbol1}</span><span className="font-mono">{Number(formatUnits(p.reserve1, p.decimals1)).toLocaleString(undefined,{maximumFractionDigits:4})}</span></div>
         <div className="flex justify-between border-t border-border/40 pt-1.5"><span className="text-muted-foreground">Price</span><span className="font-mono">1 {p.symbol0} = {price.toLocaleString(undefined,{maximumFractionDigits:4})} {p.symbol1}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Total volume</span><span className="font-mono text-muted-foreground">{vol.toLocaleString(undefined,{maximumFractionDigits:2})}</span></div>
         <div className="flex justify-between"><span className="text-muted-foreground">Swaps</span><span className="font-mono">{p.swapCount}</span></div>
       </div>
 
