@@ -3,12 +3,12 @@ import { Contract, formatUnits, parseUnits } from "ethers";
 import { toast } from "sonner";
 import {
   Sprout, Loader2, RefreshCw, TrendingUp, Coins, Zap, Lock, Unlock,
-  AlertTriangle, ShieldCheck, Settings, ExternalLink, Wallet,
+  AlertTriangle, ShieldCheck, Settings, ExternalLink, Wallet, Search, Gift,
 } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
-import { ERC20_ABI } from "@/lib/abis";
-import { getFarm, readAllPools, readTokenMeta, FarmPool } from "@/lib/farm";
+import { ERC20_ABI, FARM_ABI } from "@/lib/abis";
+import { getFarm, readAllPools, readTokenMeta, FarmPool, computePendingLocal } from "@/lib/farm";
 import { subscribeFarmEvents } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
