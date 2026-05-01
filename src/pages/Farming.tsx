@@ -415,9 +415,10 @@ const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
             {myStake > 0 ? "Manage" : "Stake"}
           </button>
           <button onClick={harvest}
-            disabled={!account || pending <= 0}
-            className="py-2.5 rounded-xl bg-card border border-border hover:border-primary text-xs font-semibold disabled:opacity-50">
-            Harvest
+            disabled={!account || livePendingWei <= 0n}
+            title={`Harvest only pool #${pool.pid} (${pool.stakingSymbol} → ${pool.rewardSymbol})`}
+            className="py-2.5 rounded-xl bg-card border border-border hover:border-primary text-xs font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5">
+            <Gift className="w-3.5 h-3.5"/> Harvest #{pool.pid}
           </button>
         </div>
 
