@@ -34,12 +34,14 @@ const Farming = () => {
       if (own) setOwner(own);
       const raws = await readAllPools(farmRead);
       const enriched: FarmPool[] = await Promise.all(raws.map(async (r, pid) => {
-        const [s, rew] = await Promise.all([
+        const [s, rew, rewardReserve] = await Promise.all([
           readTokenMeta(r.stakingToken, readProvider),
           readTokenMeta(r.rewardToken, readProvider),
+          new Contract(r.rewardToken, ERC20_ABI, readProvider).balanceOf(CONTRACTS.FARM).catch(() => 0n),
         ]);
         let pending: bigint | undefined;
         let userStaked: bigint | undefined;
+        let userRewardDebt: bigint | undefined;
         let userAllowance: bigint | undefined;
         let userBalance: bigint | undefined;
         if (account) {
@@ -50,14 +52,18 @@ const Farming = () => {
               new Contract(r.stakingToken, ERC20_ABI, readProvider).allowance(account, CONTRACTS.FARM),
               new Contract(r.stakingToken, ERC20_ABI, readProvider).balanceOf(account),
             ]);
-            pending = pend; userStaked = ui.amount ?? ui[0]; userAllowance = allow; userBalance = bal;
+            pending = pend;
+            userStaked = ui.amount ?? ui[0];
+            userRewardDebt = ui.rewardDebt ?? ui[1];
+            userAllowance = allow; userBalance = bal;
           } catch {}
         }
         return {
           pid, ...r,
           stakingSymbol: s.symbol, stakingDecimals: s.decimals,
           rewardSymbol: rew.symbol, rewardDecimals: rew.decimals,
-          pending, userStaked, userAllowance, userBalance,
+          rewardReserve,
+          pending, userStaked, userRewardDebt, userAllowance, userBalance,
         };
       }));
       setPools(enriched);
