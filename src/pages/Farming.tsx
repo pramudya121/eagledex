@@ -514,19 +514,29 @@ const FarmActionDialog = ({ pool, onClose, onChanged }: { pool: FarmPool; onClos
               MAX: {Number(formatUnits(max, pool.stakingDecimals)).toLocaleString(undefined,{maximumFractionDigits:6})}
             </button>
           </div>
-          <Input value={amt} onChange={e => setAmt(e.target.value)} placeholder="0.0"
-            className="text-2xl h-14 font-bold bg-transparent border-0 focus-visible:ring-0 px-0" />
+          <Input value={amt}
+            inputMode="decimal"
+            onChange={e => setAmt(e.target.value.replace(/[^\d.]/g, ""))}
+            placeholder="0.0"
+            className={`text-2xl h-14 font-bold bg-transparent border-0 focus-visible:ring-0 px-0 ${inputError ? "text-red-400" : ""}`} />
           <div className="text-[11px] text-muted-foreground">{pool.stakingSymbol}</div>
         </div>
 
-        {needApprove && (
+        {inputError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 mb-3 flex items-start gap-2 text-xs text-red-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
+            <span>{inputError}</span>
+          </div>
+        )}
+
+        {needApprove && !inputError && (
           <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-2.5 mb-3 flex items-start gap-2 text-xs">
             <ShieldCheck className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5"/>
             <span>One-time approval will be requested before staking.</span>
           </div>
         )}
 
-        <button onClick={submit} disabled={busy || parsed <= 0n}
+        <button onClick={submit} disabled={busy || !validation.ok}
           className="w-full h-12 rounded-xl btn-primary-grad text-primary-foreground font-bold disabled:opacity-50">
           {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : (needApprove ? `Approve & ${mode}` : (mode === "stake" ? "Stake" : "Unstake"))}
         </button>
