@@ -9,9 +9,11 @@ import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { ERC20_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool } from "@/lib/farm";
+import { subscribeFarmEvents } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { FarmHistory } from "@/components/FarmHistory";
 
 const Farming = () => {
   const { account, signer, readProvider } = useWeb3();
@@ -67,11 +69,24 @@ const Farming = () => {
     }
   }, [farmRead, readProvider, account]);
 
+  const [historyKey, setHistoryKey] = useState(0);
+
   useEffect(() => { load(); }, [load]);
+  // Slow safety-net polling
   useEffect(() => {
-    const t = setInterval(load, 20_000);
+    const t = setInterval(load, 30_000);
     return () => clearInterval(t);
   }, [load]);
+  // Real-time refresh via on-chain events (Deposit/Withdraw/Emergency/RewardPaid)
+  useEffect(() => {
+    const off = subscribeFarmEvents(readProvider, (_kind, _pid, evUser) => {
+      load();
+      if (account && evUser.toLowerCase() === account.toLowerCase()) {
+        setHistoryKey(k => k + 1);
+      }
+    });
+    return off;
+  }, [readProvider, load, account]);
 
   const visible = useMemo(() => {
     if (tab === "staked") return pools.filter(p => (p.userStaked ?? 0n) > 0n || (p.pending ?? 0n) > 0n);
@@ -179,11 +194,13 @@ const Farming = () => {
         </div>
       )}
 
+      <FarmHistory pools={pools} refreshKey={historyKey} />
+
       {activePid !== null && (
         <FarmActionDialog
           pool={pools.find(p => p.pid === activePid)!}
           onClose={() => setActivePid(null)}
-          onChanged={load}
+          onChanged={() => { load(); setHistoryKey(k => k + 1); }}
         />
       )}
     </div>

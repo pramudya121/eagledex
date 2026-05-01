@@ -8,6 +8,7 @@ import { FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool } from "@/lib/farm";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const Admin = () => {
   const { account, signer, readProvider } = useWeb3();
@@ -106,19 +107,27 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
   const [reward, setReward] = useState("");
   const [rpb, setRpb] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+
+  const validate = () => {
+    if (!signer) { toast.error("Connect wallet"); return false; }
+    if (!isAddress(staking)) { toast.error("Invalid staking token address"); return false; }
+    if (!isAddress(reward)) { toast.error("Invalid reward token address"); return false; }
+    try {
+      const v = parseUnits(rpb || "0", 18);
+      if (v <= 0n) { toast.error("rewardPerBlock must be > 0"); return false; }
+    } catch { toast.error("Invalid rewardPerBlock"); return false; }
+    return true;
+  };
 
   const submit = async () => {
-    if (!signer) return;
-    if (!isAddress(staking)) return toast.error("Invalid staking token address");
-    if (!isAddress(reward)) return toast.error("Invalid reward token address");
-    let rpbWei: bigint;
-    try { rpbWei = parseUnits(rpb || "0", 18); } catch { return toast.error("Invalid rewardPerBlock"); }
-    if (rpbWei <= 0n) return toast.error("rewardPerBlock must be > 0");
     setBusy(true);
     try {
+      const rpbWei = parseUnits(rpb, 18);
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx("Add farm pool", () => c.addPool(staking, reward, rpbWei));
       setStaking(""); setReward(""); setRpb("");
+      setConfirm(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
@@ -137,13 +146,30 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
           <Input value={rpb} onChange={e => setRpb(e.target.value)} placeholder="0.1" className="font-mono text-xs"/>
         </Field>
       </div>
-      <button onClick={submit} disabled={busy}
+      <button onClick={() => { if (validate()) setConfirm(true); }} disabled={busy}
         className="mt-4 h-11 px-6 rounded-xl btn-primary-grad text-primary-foreground font-bold disabled:opacity-50 flex items-center gap-2">
         {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : <Plus className="w-4 h-4"/>} Create pool
       </button>
       <p className="text-[11px] text-muted-foreground mt-2">
         Note: ensure the farm contract holds enough reward token for distributions.
       </p>
+
+      <ConfirmDialog
+        open={confirm}
+        title="Create new farm pool?"
+        description="This action is on-chain and cannot be undone. Verify the addresses below carefully."
+        confirmLabel="Yes, create pool"
+        busy={busy}
+        onCancel={() => setConfirm(false)}
+        onConfirm={submit}
+        details={
+          <>
+            <div><span className="text-muted-foreground">Staking:</span> <span className="break-all">{staking}</span></div>
+            <div><span className="text-muted-foreground">Reward:</span> <span className="break-all">{reward}</span></div>
+            <div><span className="text-muted-foreground">Reward / block:</span> {rpb}</div>
+          </>
+        }
+      />
     </div>
   );
 };
@@ -151,15 +177,24 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
 const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any; onChanged: () => void }) => {
   const [rpb, setRpb] = useState(formatUnits(pool.rewardPerBlock, 18));
   const [busy, setBusy] = useState(false);
+  const [confirmUpd, setConfirmUpd] = useState(false);
+
+  const askUpdate = () => {
+    if (!signer) return toast.error("Connect wallet");
+    try {
+      const v = parseUnits(rpb || "0", 18);
+      if (v < 0n) throw new Error();
+    } catch { return toast.error("Invalid value"); }
+    setConfirmUpd(true);
+  };
 
   const update = async () => {
-    if (!signer) return;
-    let v: bigint;
-    try { v = parseUnits(rpb || "0", 18); } catch { return toast.error("Invalid value"); }
     setBusy(true);
     try {
+      const v = parseUnits(rpb || "0", 18);
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx(`Update pool #${pool.pid} reward`, () => c.updateRewardPerBlock(pool.pid, v));
+      setConfirmUpd(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
@@ -173,6 +208,8 @@ const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any
       onChanged();
     } catch {} finally { setBusy(false); }
   };
+
+  const currentRpb = formatUnits(pool.rewardPerBlock, 18);
 
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-4">
@@ -191,7 +228,7 @@ const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any
         <Field label="Reward per block">
           <Input value={rpb} onChange={e => setRpb(e.target.value)} className="font-mono text-xs h-9"/>
         </Field>
-        <button onClick={update} disabled={busy}
+        <button onClick={askUpdate} disabled={busy}
           className="h-9 px-4 rounded-lg btn-primary-grad text-primary-foreground text-xs font-bold disabled:opacity-50">
           Update
         </button>
@@ -200,6 +237,23 @@ const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any
           Sync pool
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmUpd}
+        title={`Update reward rate for pool #${pool.pid}?`}
+        description="This changes emissions for all stakers in this pool."
+        confirmLabel="Yes, update rate"
+        busy={busy}
+        onCancel={() => setConfirmUpd(false)}
+        onConfirm={update}
+        details={
+          <>
+            <div><span className="text-muted-foreground">Pool:</span> {pool.stakingSymbol} → {pool.rewardSymbol}</div>
+            <div><span className="text-muted-foreground">Current:</span> {currentRpb}</div>
+            <div><span className="text-muted-foreground">New:</span> {rpb}</div>
+          </>
+        }
+      />
     </div>
   );
 };
@@ -232,17 +286,27 @@ const MassUpdateCard = ({ signer, pools, onChanged }: any) => {
 const TransferOwnershipCard = ({ signer, onChanged }: any) => {
   const [addr, setAddr] = useState("");
   const [busy, setBusy] = useState(false);
-  const run = async () => {
-    if (!signer) return;
+  const [open, setOpen] = useState(false);
+  const [ack, setAck] = useState(false);
+
+  const ask = () => {
+    if (!signer) return toast.error("Connect wallet");
     if (!isAddress(addr)) return toast.error("Invalid address");
-    if (!confirm(`Transfer ownership to ${addr}? This is irreversible.`)) return;
+    setAck(false);
+    setOpen(true);
+  };
+
+  const run = async () => {
+    if (!ack) return toast.error("Please confirm you understand the risk");
     setBusy(true);
     try {
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx("Transfer ownership", () => c.transferOwnership(addr));
+      setOpen(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
+
   return (
     <div className="glass rounded-2xl p-5 border border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent">
       <h3 className="font-bold flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-red-400"/> Danger zone — transfer ownership</h3>
@@ -250,11 +314,31 @@ const TransferOwnershipCard = ({ signer, onChanged }: any) => {
         <Field label="New owner address">
           <Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x…" className="font-mono text-xs h-10"/>
         </Field>
-        <button onClick={run} disabled={busy}
+        <button onClick={ask} disabled={busy}
           className="h-10 px-5 rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold text-xs disabled:opacity-50">
           {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Transfer"}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={open}
+        danger
+        title="Transfer contract ownership?"
+        description="This is IRREVERSIBLE. You will lose all admin powers over the farm contract."
+        confirmLabel="Transfer ownership"
+        busy={busy}
+        onCancel={() => setOpen(false)}
+        onConfirm={run}
+        details={
+          <>
+            <div><span className="text-muted-foreground">New owner:</span> <span className="break-all">{addr}</span></div>
+            <label className="flex items-start gap-2 mt-3 cursor-pointer text-foreground font-sans">
+              <input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} className="mt-0.5"/>
+              <span className="text-xs">I understand this action cannot be undone and I will permanently lose admin access.</span>
+            </label>
+          </>
+        }
+      />
     </div>
   );
 };
