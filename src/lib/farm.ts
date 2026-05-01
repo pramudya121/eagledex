@@ -1,5 +1,5 @@
 import { Contract, JsonRpcProvider, JsonRpcSigner } from "ethers";
-import { CONTRACTS } from "./chain";
+import { CONTRACTS, TOKENS } from "./chain";
 import { FARM_ABI, ERC20_ABI } from "./abis";
 
 export type PoolInfoRaw = {
