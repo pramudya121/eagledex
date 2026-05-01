@@ -286,17 +286,27 @@ const MassUpdateCard = ({ signer, pools, onChanged }: any) => {
 const TransferOwnershipCard = ({ signer, onChanged }: any) => {
   const [addr, setAddr] = useState("");
   const [busy, setBusy] = useState(false);
-  const run = async () => {
-    if (!signer) return;
+  const [open, setOpen] = useState(false);
+  const [ack, setAck] = useState(false);
+
+  const ask = () => {
+    if (!signer) return toast.error("Connect wallet");
     if (!isAddress(addr)) return toast.error("Invalid address");
-    if (!confirm(`Transfer ownership to ${addr}? This is irreversible.`)) return;
+    setAck(false);
+    setOpen(true);
+  };
+
+  const run = async () => {
+    if (!ack) return toast.error("Please confirm you understand the risk");
     setBusy(true);
     try {
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx("Transfer ownership", () => c.transferOwnership(addr));
+      setOpen(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
+
   return (
     <div className="glass rounded-2xl p-5 border border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent">
       <h3 className="font-bold flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-red-400"/> Danger zone — transfer ownership</h3>
@@ -304,11 +314,31 @@ const TransferOwnershipCard = ({ signer, onChanged }: any) => {
         <Field label="New owner address">
           <Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x…" className="font-mono text-xs h-10"/>
         </Field>
-        <button onClick={run} disabled={busy}
+        <button onClick={ask} disabled={busy}
           className="h-10 px-5 rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold text-xs disabled:opacity-50">
           {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Transfer"}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={open}
+        danger
+        title="Transfer contract ownership?"
+        description="This is IRREVERSIBLE. You will lose all admin powers over the farm contract."
+        confirmLabel="Transfer ownership"
+        busy={busy}
+        onCancel={() => setOpen(false)}
+        onConfirm={run}
+        details={
+          <>
+            <div><span className="text-muted-foreground">New owner:</span> <span className="break-all">{addr}</span></div>
+            <label className="flex items-start gap-2 mt-3 cursor-pointer text-foreground font-sans">
+              <input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} className="mt-0.5"/>
+              <span className="text-xs">I understand this action cannot be undone and I will permanently lose admin access.</span>
+            </label>
+          </>
+        }
+      />
     </div>
   );
 };
