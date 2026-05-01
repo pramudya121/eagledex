@@ -9,11 +9,12 @@ import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { ERC20_ABI, FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool, computePendingLocal } from "@/lib/farm";
-import { subscribeFarmEvents } from "@/lib/farmEvents";
+import { subscribeFarmEvents, refetchPoolForUser } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { FarmHistory } from "@/components/FarmHistory";
+import { validateAmount } from "@/lib/validate";
 
 const Farming = () => {
   const { account, signer, readProvider } = useWeb3();
