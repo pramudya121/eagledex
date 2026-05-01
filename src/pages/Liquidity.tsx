@@ -214,6 +214,30 @@ const Liquidity = () => {
     } catch {} finally { setBusy(false); }
   };
 
+  /** Deploy an empty pair contract directly via Factory (no liquidity yet).
+   *  Useful when the user wants the pair to exist on-chain immediately so it
+   *  shows up in Pools, before they decide on initial price/amounts. */
+  const onCreatePair = async () => {
+    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (pairAddr !== ZeroAddress) return toast.error("Pair already exists");
+    if (isNative(a) && isNative(b)) return toast.error("Cannot pair native with native");
+    setBusy(true);
+    try {
+      // Use signer-bound factory (the one in context may be tied to read provider)
+      const f = new Contract(CONTRACTS.FACTORY, ["function createPair(address,address) returns (address)"], signer);
+      await sendTx(`Create ${a.symbol}/${b.symbol} pair`, () => f.createPair(wrap(a), wrap(b)));
+      // Re-read pair address — Factory.createPair returns it but ethers won't decode after tx
+      const fresh = await factory.getPair(wrap(a), wrap(b));
+      setPairAddr(fresh);
+      if (fresh !== ZeroAddress) {
+        toast.success("Pair deployed", { description: `${fresh.slice(0,10)}…${fresh.slice(-6)}` });
+        poolIndex.refreshPair(fresh);
+      }
+      // Nudge indexer so PairCreated log scan picks it up immediately
+      poolIndex.refresh();
+    } catch {} finally { setBusy(false); }
+  };
+
   const onAdd = async () => {
     if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
     const va = validateAmount(aAmt, a.decimals, { symbol: a.symbol, max: parse(balA, a.decimals) });
