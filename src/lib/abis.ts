@@ -88,3 +88,23 @@ export const FARM_ABI = [
   "event RewardPerBlockUpdated(uint256 indexed pid, uint256 rewardPerBlock)",
   "event OwnershipTransferred(address indexed prevOwner, address indexed newOwner)",
 ];
+
+// Multi-token Faucet contract
+export const FAUCET_ABI = [
+  "function adminWithdraw(uint8 tokenIndex, uint256 amount, address to)",
+  "function claim(uint8 tokenIndex)",
+  "function claimAll()",
+  "function refill(uint8 tokenIndex, uint256 amount)",
+  "function setClaimAmount(uint8 tokenIndex, uint256 amount)",
+  "function setCooldown(uint256 seconds_)",
+  "function setMaxClaims(uint8 tokenIndex, uint256 max)",
+  "function setToken(uint8 tokenIndex, address tokenAddress)",
+  "function setUserClaimCount(address user, uint8 tokenIndex, uint256 count)",
+  "function claimAmounts(uint256) view returns (uint256)",
+  "function cooldown() view returns (uint256)",
+  "function lastClaimed(address, uint8) view returns (uint256)",
+  "function maxClaims(uint256) view returns (uint256)",
+  "function owner() view returns (address)",
+  "function tokens(uint256) view returns (address)",
+  "function userClaimCount(address, uint8) view returns (uint256)",
+];
