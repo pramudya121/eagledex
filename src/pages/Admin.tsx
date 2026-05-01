@@ -70,45 +70,82 @@ const Admin = () => {
     );
   }
 
+  const totalStakedAll = pools.reduce((acc, p) => acc + Number(formatUnits(p.totalStaked, p.stakingDecimals)), 0);
+
   return (
-    <div className="max-w-2xl mx-auto animate-slide-up">
-      <div className="glass rounded-3xl p-6 border border-primary/30 shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.5)]">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500/20 to-violet-600/20 border border-fuchsia-500/40 grid place-items-center">
-            <Settings className="w-5 h-5 text-fuchsia-400" />
+    <div className="max-w-3xl mx-auto animate-slide-up space-y-5">
+      {/* Pool summary header */}
+      <div className="glass rounded-3xl p-6 border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 via-transparent to-violet-600/10">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-fuchsia-500 to-violet-600 grid place-items-center shadow-[0_8px_24px_-8px_hsl(280_85%_60%/0.6)]">
+            <Settings className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-extrabold tracking-tight">
               <span className="bg-gradient-to-r from-fuchsia-400 to-orange-300 bg-clip-text text-transparent">Farming Admin</span>
             </h1>
-            <p className="text-xs text-muted-foreground">Owner-only controls</p>
+            <p className="text-xs text-muted-foreground">Owner-only controls · {pools.length} pool{pools.length === 1 ? "" : "s"}</p>
           </div>
           <button onClick={load} className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-card transition" title="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Tabs */}
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <StatBox label="Pools" value={String(pools.length)} />
+          <StatBox label="Total staked" value={totalStakedAll.toLocaleString(undefined, { maximumFractionDigits: 2 })} />
+          <StatBox label="Owner" value={owner ? `${owner.slice(0,6)}…${owner.slice(-4)}` : "—"} mono />
+        </div>
+
+        {/* Pool summary grid */}
+        {pools.length > 0 && (
+          <div className="space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Pool overview</div>
+            <div className="grid sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+              {pools.map(p => (
+                <div key={p.pid} className="rounded-xl border border-border/60 bg-card/50 p-3 hover:border-primary/50 transition">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-gradient-to-r from-fuchsia-500/30 to-violet-600/30 border border-fuchsia-400/40 text-fuchsia-100">#{p.pid}</span>
+                    <span className="font-bold text-sm truncate">{p.stakingSymbol} → {p.rewardSymbol}</span>
+                    <a href={explorerAddr(p.stakingToken)} target="_blank" rel="noreferrer" className="ml-auto text-muted-foreground hover:text-primary"><ExternalLink className="w-3 h-3"/></a>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[10px] font-mono">
+                    <div><span className="text-muted-foreground">staked:</span> {Number(formatUnits(p.totalStaked, p.stakingDecimals)).toLocaleString(undefined, { maximumFractionDigits: 3 })}</div>
+                    <div><span className="text-muted-foreground">rpb:</span> {Number(formatUnits(p.rewardPerBlock, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 })}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs card */}
+      <div className="glass rounded-3xl p-6 border border-primary/30 shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.5)]">
         <div className="grid grid-cols-3 gap-2 mb-5">
           <TabBtn active={tab === "add"} onClick={() => setTab("add")} icon={<Plus className="w-4 h-4"/>} label="Add Pool" gradient />
           <TabBtn active={tab === "edit"} onClick={() => setTab("edit")} icon={<Pencil className="w-4 h-4"/>} label="Edit Pool" />
           <TabBtn active={tab === "mass"} onClick={() => setTab("mass")} icon={<Zap className="w-4 h-4"/>} label="Mass Update" />
         </div>
 
-        {/* Tab content */}
         {tab === "add" && <AddPoolTab signer={signer} onChanged={load} />}
         {tab === "edit" && <EditPoolTab signer={signer} pools={pools} onChanged={load} />}
         {tab === "mass" && <MassUpdateTab signer={signer} pools={pools} onChanged={load} />}
       </div>
 
-      {/* Danger zone — always visible below */}
-      <div className="mt-5">
-        <TransferOwnershipCard signer={signer} onChanged={load} />
-      </div>
+      {/* Danger zone */}
+      <TransferOwnershipCard signer={signer} onChanged={load} />
     </div>
   );
 };
+
+const StatBox = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
+  <div className="rounded-xl border border-border/60 bg-card/40 p-2.5">
+    <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{label}</div>
+    <div className={`text-sm font-extrabold mt-0.5 truncate ${mono ? "font-mono" : ""}`}>{value}</div>
+  </div>
+);
 
 const TabBtn = ({ active, onClick, icon, label, gradient }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; gradient?: boolean }) => (
   <button
