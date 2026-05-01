@@ -9,11 +9,12 @@ import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { ERC20_ABI, FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool, computePendingLocal } from "@/lib/farm";
-import { subscribeFarmEvents } from "@/lib/farmEvents";
+import { subscribeFarmEvents, refetchPoolForUser } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { FarmHistory } from "@/components/FarmHistory";
+import { validateAmount } from "@/lib/validate";
 
 const Farming = () => {
   const { account, signer, readProvider } = useWeb3();
@@ -83,12 +84,35 @@ const Farming = () => {
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
   }, [load]);
-  // Real-time refresh via on-chain events (Deposit/Withdraw/Emergency/RewardPaid)
+  // Real-time refresh via on-chain events. We do a targeted per-pool refetch
+  // when the connected user's address is involved (cheap), and a soft full
+  // refresh for any other user's activity (so totals stay accurate).
   useEffect(() => {
-    const off = subscribeFarmEvents(readProvider, (_kind, _pid, evUser) => {
-      load();
-      if (account && evUser.toLowerCase() === account.toLowerCase()) {
+    const off = subscribeFarmEvents(readProvider, async (kind, pid, evUser) => {
+      const isMine = !!(account && evUser.toLowerCase() === account.toLowerCase());
+      if (isMine) {
+        try {
+          const slim = await refetchPoolForUser(readProvider, pid, account!);
+          setPools(prev => prev.map(p => p.pid === pid ? {
+            ...p,
+            accRewardPerShare: slim.accRewardPerShare,
+            lastRewardBlock:   slim.lastRewardBlock,
+            rewardPerBlock:    slim.rewardPerBlock,
+            totalStaked:       slim.totalStaked,
+            userStaked:        slim.userStaked,
+            userRewardDebt:    slim.userRewardDebt,
+            pending:           slim.pending,
+          } : p));
+        } catch { load(); }
         setHistoryKey(k => k + 1);
+        // After Withdraw/EmergencyWithdraw the staking-token balance & allowance
+        // changed in the user's wallet — kick a full reload to refresh those.
+        if (kind === "Withdraw" || kind === "EmergencyWithdraw" || kind === "Deposit") {
+          load();
+        }
+      } else {
+        // Someone else moved liquidity in this pool: totalStaked changed → soft reload.
+        load();
       }
     });
     return off;
@@ -391,9 +415,10 @@ const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
             {myStake > 0 ? "Manage" : "Stake"}
           </button>
           <button onClick={harvest}
-            disabled={!account || pending <= 0}
-            className="py-2.5 rounded-xl bg-card border border-border hover:border-primary text-xs font-semibold disabled:opacity-50">
-            Harvest
+            disabled={!account || livePendingWei <= 0n}
+            title={`Harvest only pool #${pool.pid} (${pool.stakingSymbol} → ${pool.rewardSymbol})`}
+            className="py-2.5 rounded-xl bg-card border border-border hover:border-primary text-xs font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5">
+            <Gift className="w-3.5 h-3.5"/> Harvest #{pool.pid}
           </button>
         </div>
 
@@ -416,20 +441,24 @@ const FarmActionDialog = ({ pool, onClose, onChanged }: { pool: FarmPool; onClos
   const myBalance = pool.userBalance ?? 0n;
   const allow = pool.userAllowance ?? 0n;
 
-  const parsed = useMemo(() => {
-    try { return amt ? parseUnits(amt, pool.stakingDecimals) : 0n; } catch { return 0n; }
-  }, [amt, pool.stakingDecimals]);
+  const max = mode === "stake" ? myBalance : myStake;
+  const maxLabel = mode === "stake" ? `${pool.stakingSymbol} balance` : `staked ${pool.stakingSymbol}`;
+
+  // Strict validation: decimals, positivity, max, NaN/Infinity, scientific notation.
+  const validation = useMemo(
+    () => validateAmount(amt, pool.stakingDecimals, { symbol: maxLabel, max }),
+    [amt, pool.stakingDecimals, maxLabel, max],
+  );
+  const parsed = validation.value ?? 0n;
+  const inputError = amt.trim() !== "" && !validation.ok ? validation.error : undefined;
 
   const needApprove = mode === "stake" && parsed > 0n && allow < parsed;
 
   const submit = async () => {
     if (!signer || !account) return;
-    if (parsed <= 0n) return toast.error("Enter an amount");
-    if (mode === "stake" && parsed > myBalance) return toast.error("Insufficient balance");
-    if (mode === "unstake" && parsed > myStake) return toast.error("Exceeds your stake");
+    if (!validation.ok) return toast.error(validation.error ?? "Invalid amount");
     setBusy(true);
     try {
-      const FARM_ABI = (await import("@/lib/abis")).FARM_ABI;
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       if (mode === "stake") {
         if (needApprove) {
@@ -444,21 +473,17 @@ const FarmActionDialog = ({ pool, onClose, onChanged }: { pool: FarmPool; onClos
       onClose();
     } catch {} finally { setBusy(false); }
   };
-
   const emergency = async () => {
     if (!signer) return;
     if (!confirm("Emergency withdraw forfeits pending rewards. Continue?")) return;
     setBusy(true);
     try {
-      const FARM_ABI = (await import("@/lib/abis")).FARM_ABI;
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx(`Emergency withdraw ${pool.stakingSymbol}`, () => c.emergencyWithdraw(pool.pid));
       onChanged();
       onClose();
     } catch {} finally { setBusy(false); }
   };
-
-  const max = mode === "stake" ? myBalance : myStake;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
@@ -489,19 +514,29 @@ const FarmActionDialog = ({ pool, onClose, onChanged }: { pool: FarmPool; onClos
               MAX: {Number(formatUnits(max, pool.stakingDecimals)).toLocaleString(undefined,{maximumFractionDigits:6})}
             </button>
           </div>
-          <Input value={amt} onChange={e => setAmt(e.target.value)} placeholder="0.0"
-            className="text-2xl h-14 font-bold bg-transparent border-0 focus-visible:ring-0 px-0" />
+          <Input value={amt}
+            inputMode="decimal"
+            onChange={e => setAmt(e.target.value.replace(/[^\d.]/g, ""))}
+            placeholder="0.0"
+            className={`text-2xl h-14 font-bold bg-transparent border-0 focus-visible:ring-0 px-0 ${inputError ? "text-red-400" : ""}`} />
           <div className="text-[11px] text-muted-foreground">{pool.stakingSymbol}</div>
         </div>
 
-        {needApprove && (
+        {inputError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 mb-3 flex items-start gap-2 text-xs text-red-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
+            <span>{inputError}</span>
+          </div>
+        )}
+
+        {needApprove && !inputError && (
           <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-2.5 mb-3 flex items-start gap-2 text-xs">
             <ShieldCheck className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5"/>
             <span>One-time approval will be requested before staking.</span>
           </div>
         )}
 
-        <button onClick={submit} disabled={busy || parsed <= 0n}
+        <button onClick={submit} disabled={busy || !validation.ok}
           className="w-full h-12 rounded-xl btn-primary-grad text-primary-foreground font-bold disabled:opacity-50">
           {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : (needApprove ? `Approve & ${mode}` : (mode === "stake" ? "Stake" : "Unstake"))}
         </button>
