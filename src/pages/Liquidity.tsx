@@ -214,6 +214,30 @@ const Liquidity = () => {
     } catch {} finally { setBusy(false); }
   };
 
+  /** Deploy an empty pair contract directly via Factory (no liquidity yet).
+   *  Useful when the user wants the pair to exist on-chain immediately so it
+   *  shows up in Pools, before they decide on initial price/amounts. */
+  const onCreatePair = async () => {
+    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (pairAddr !== ZeroAddress) return toast.error("Pair already exists");
+    if (isNative(a) && isNative(b)) return toast.error("Cannot pair native with native");
+    setBusy(true);
+    try {
+      // Use signer-bound factory (the one in context may be tied to read provider)
+      const f = new Contract(CONTRACTS.FACTORY, ["function createPair(address,address) returns (address)"], signer);
+      await sendTx(`Create ${a.symbol}/${b.symbol} pair`, () => f.createPair(wrap(a), wrap(b)));
+      // Re-read pair address — Factory.createPair returns it but ethers won't decode after tx
+      const fresh = await factory.getPair(wrap(a), wrap(b));
+      setPairAddr(fresh);
+      if (fresh !== ZeroAddress) {
+        toast.success("Pair deployed", { description: `${fresh.slice(0,10)}…${fresh.slice(-6)}` });
+        poolIndex.refreshPair(fresh);
+      }
+      // Nudge indexer so PairCreated log scan picks it up immediately
+      poolIndex.refresh();
+    } catch {} finally { setBusy(false); }
+  };
+
   const onAdd = async () => {
     if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
     const va = validateAmount(aAmt, a.decimals, { symbol: a.symbol, max: parse(balA, a.decimals) });
@@ -414,10 +438,25 @@ const Liquidity = () => {
             {(pairAddr === ZeroAddress || (reserves && reserves.totalSupply === 0n)) && (
               <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 text-xs flex items-start gap-2 animate-fade-in">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
-                <div>
+                <div className="flex-1">
                   <div className="font-bold mb-0.5">{pairAddr === ZeroAddress ? "New pair — you mint it." : "This pool is empty."}</div>
                   You will be the <span className="font-semibold">first liquidity provider</span> and you set the price.
                   The ratio of {a.symbol}/{b.symbol} you submit becomes the opening price.
+                  {pairAddr === ZeroAddress && (
+                    <div className="mt-2 pt-2 border-t border-yellow-500/20 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-yellow-200/80">Want the pair to exist before adding liquidity?</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy || !signer || (isNative(a) && isNative(b))}
+                        onClick={onCreatePair}
+                        className="h-7 px-2 text-[11px] border-yellow-500/40 hover:bg-yellow-500/20 text-yellow-100"
+                      >
+                        {busy ? <Loader2 className="w-3 h-3 animate-spin"/> : "Deploy empty pair"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
