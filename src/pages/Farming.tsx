@@ -283,21 +283,40 @@ const HeroStat = ({ icon: Icon, label, value, accent }: any) => (
   </div>
 );
 
-const FarmCard = ({ pool, onAction, onChanged }: { pool: FarmPool; onAction: () => void; onChanged: () => void }) => {
+const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
+  pool: FarmPool; currentBlock: bigint; onAction: () => void; onChanged: () => void;
+}) => {
   const { account, signer } = useWeb3();
   const total = Number(formatUnits(pool.totalStaked, pool.stakingDecimals));
   const rpb = Number(formatUnits(pool.rewardPerBlock, pool.rewardDecimals));
   const myStake = Number(formatUnits(pool.userStaked ?? 0n, pool.stakingDecimals));
-  const pending = Number(formatUnits(pool.pending ?? 0n, pool.rewardDecimals));
+
+  // Live ticker: recompute pending locally as new blocks come in.
+  const livePendingWei = useMemo(
+    () => (currentBlock > 0n ? computePendingLocal(pool, currentBlock) : (pool.pending ?? 0n)),
+    [pool, currentBlock],
+  );
+  const pending = Number(formatUnits(livePendingWei, pool.rewardDecimals));
+
+  // Reward liquidity: how much reward token the contract can pay out right now.
+  const reserve = Number(formatUnits(pool.rewardReserve ?? 0n, pool.rewardDecimals));
+  const lowReserve = (pool.rewardReserve ?? 0n) > 0n
+    ? livePendingWei > (pool.rewardReserve ?? 0n)
+    : (pool.rewardReserve === 0n);
 
   // rough APR using ~2s blocks → ~15.7M blocks/year. Treats 1 stake = 1 reward unit.
-  // This is an approximation; for prod you'd plug in oracle prices.
   const BLOCKS_PER_YEAR = 15_768_000;
   const apr = total > 0 ? (rpb * BLOCKS_PER_YEAR / total) * 100 : 0;
 
   const harvest = async () => {
     if (!signer) return toast.error("Connect wallet");
-    const c = new Contract(CONTRACTS.FARM, (await import("@/lib/abis")).FARM_ABI, signer);
+    if (lowReserve) {
+      toast.error("Insufficient reward liquidity", {
+        description: `Farm contract holds only ${reserve} ${pool.rewardSymbol}. Ask admin to top up.`,
+      });
+      return;
+    }
+    const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
     await sendTx(`Harvest ${pool.rewardSymbol}`, () => c.deposit(pool.pid, 0n));
     onChanged();
   };
@@ -315,7 +334,10 @@ const FarmCard = ({ pool, onAction, onChanged }: { pool: FarmPool; onAction: () 
               <Sprout className="w-6 h-6 text-primary-foreground"/>
             </div>
             <div>
-              <div className="font-extrabold text-lg leading-none">{pool.stakingSymbol}</div>
+              <div className="font-extrabold text-lg leading-none flex items-center gap-2">
+                {pool.stakingSymbol}
+                <span className="text-[10px] font-mono text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded">#{pool.pid}</span>
+              </div>
               <div className="text-[11px] text-muted-foreground">Stake → earn {pool.rewardSymbol}</div>
             </div>
           </div>
@@ -343,9 +365,24 @@ const FarmCard = ({ pool, onAction, onChanged }: { pool: FarmPool; onAction: () 
           </div>
           <div className="flex justify-between text-xs mt-1">
             <span className="text-muted-foreground">Pending</span>
-            <span className="font-mono font-bold text-grad">{pending.toLocaleString(undefined,{maximumFractionDigits:6})} {pool.rewardSymbol}</span>
+            <span className="font-mono font-bold text-grad tabular-nums">
+              {pending.toLocaleString(undefined,{maximumFractionDigits:8})} {pool.rewardSymbol}
+            </span>
+          </div>
+          <div className="flex justify-between text-[10px] mt-1 text-muted-foreground">
+            <span>Reward reserve</span>
+            <span className={`font-mono ${lowReserve ? "text-red-400" : ""}`}>
+              {reserve.toLocaleString(undefined,{maximumFractionDigits:4})} {pool.rewardSymbol}
+            </span>
           </div>
         </div>
+
+        {lowReserve && pool.userStaked && pool.userStaked > 0n && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 mb-2 flex items-center gap-1.5 text-[11px] text-red-300">
+            <AlertTriangle className="w-3 h-3 shrink-0"/>
+            Low reward liquidity — harvest may revert.
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <button onClick={onAction}
