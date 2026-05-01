@@ -120,6 +120,7 @@ export async function refreshBalanceGlobal(): Promise<void> {
 }
 
 interface Web3Ctx {
+  isReady: boolean;
   account: string | null;
   chainId: number | null;
   provider: BrowserProvider | null;
@@ -139,6 +140,36 @@ interface Web3Ctx {
 }
 
 const Ctx = createContext<Web3Ctx | null>(null);
+
+const fallbackReadProvider = new JsonRpcProvider(INTEGRALAYER.rpcUrl, INTEGRALAYER.chainId);
+const noopConnect = async () => {
+  toast.error("Wallet provider is still loading", { description: "Please wait a moment and try again." });
+};
+const noopDisconnect = () => undefined;
+const noopSwitch = async () => undefined;
+const noopRefresh = async () => undefined;
+const noopEnsureChain = async () => {
+  throw new Error("Wallet provider is still loading");
+};
+
+const fallbackCtx: Web3Ctx = {
+  isReady: false,
+  account: null,
+  chainId: null,
+  provider: null,
+  signer: null,
+  readProvider: fallbackReadProvider,
+  factory: new Contract(CONTRACTS.FACTORY, FACTORY_ABI, fallbackReadProvider),
+  router: new Contract(CONTRACTS.ROUTER, ROUTER_ABI, fallbackReadProvider),
+  connect: noopConnect,
+  disconnect: noopDisconnect,
+  switchToIntegralayer: noopSwitch,
+  isCorrectChain: false,
+  nativeBalance: "0",
+  refreshBalance: noopRefresh,
+  walletId: null,
+  ensureChain: noopEnsureChain,
+};
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<string | null>(null);
@@ -299,6 +330,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
+      isReady: true,
       account, chainId, provider, signer, readProvider, factory, router,
       connect, disconnect, switchToIntegralayer, isCorrectChain, nativeBalance, refreshBalance, walletId, ensureChain,
     }}>
@@ -309,6 +341,5 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
 export function useWeb3() {
   const c = useContext(Ctx);
-  if (!c) throw new Error("useWeb3 must be inside Web3Provider");
-  return c;
+  return c ?? fallbackCtx;
 }
