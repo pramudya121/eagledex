@@ -6,7 +6,7 @@ import {
   Coins, Send, Hash, CheckCircle2, Copy,
 } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
-import { CONTRACTS, explorerAddr, TOKENS } from "@/lib/chain";
+import { CONTRACTS, explorerAddr, TOKENS, NATIVE_TOKEN } from "@/lib/chain";
 import { FAUCET_ABI, ERC20_ABI } from "@/lib/abis";
 import { getFaucet, readFaucetTokens, FaucetTokenInfo } from "@/lib/faucet";
 import { sendTx } from "@/lib/tx";
@@ -19,7 +19,9 @@ const MAX_SLOTS = 16;
 const FAUCETABLE = TOKENS.filter(t => !t.isNative);
 
 const tokenLogoFor = (address: string): string | null => {
-  const t = TOKENS.find(x => x.address.toLowerCase() === address.toLowerCase());
+  const a = address.toLowerCase();
+  if (a === CONTRACTS.WETH.toLowerCase()) return NATIVE_TOKEN.logo;
+  const t = TOKENS.find(x => x.address.toLowerCase() === a);
   return t?.logo ?? null;
 };
 
