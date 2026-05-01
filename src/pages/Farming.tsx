@@ -206,7 +206,20 @@ const Farming = () => {
             </button>
           ))}
         </div>
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"/>
+          <Input value={query} onChange={e => setQuery(e.target.value)}
+            placeholder="Search symbol or 0x…"
+            className="h-9 pl-9 text-xs bg-card border-border"/>
+        </div>
         <div className="ml-auto flex items-center gap-2">
+          {harvestablePids.length > 0 && (
+            <button onClick={harvestAll} disabled={harvestingAll}
+              className="px-3 py-2 rounded-lg btn-primary-grad text-primary-foreground text-xs font-bold flex items-center gap-1.5 disabled:opacity-60">
+              {harvestingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Gift className="w-3.5 h-3.5"/>}
+              Harvest all ({harvestablePids.length})
+            </button>
+          )}
           <button onClick={load} disabled={refreshing}
             className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}/> Refresh
@@ -228,18 +241,21 @@ const Farming = () => {
             <Sprout className="w-7 h-7 text-primary-foreground"/>
           </div>
           <h3 className="text-2xl font-extrabold tracking-tight mb-1">
-            {tab === "staked" ? "No active stakes yet" : "No farms yet"}
+            {query ? "No matches" : tab === "staked" ? "No active stakes yet" : "No farms yet"}
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            {tab === "staked"
-              ? "Stake into a pool to start earning rewards every block."
-              : "The contract owner hasn't added any pools yet. Check back soon."}
+            {query
+              ? "Try a different symbol or address."
+              : tab === "staked"
+                ? "Stake into a pool to start earning rewards every block."
+                : "The contract owner hasn't added any pools yet. Check back soon."}
           </p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {visible.map(p => (
-            <FarmCard key={p.pid} pool={p} onAction={() => setActivePid(p.pid)} onChanged={load} />
+            <FarmCard key={p.pid} pool={p} currentBlock={currentBlock}
+              onAction={() => setActivePid(p.pid)} onChanged={load} />
           ))}
         </div>
       )}
