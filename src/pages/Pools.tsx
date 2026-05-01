@@ -4,7 +4,7 @@ import { formatUnits } from "ethers";
 import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3, Droplets, Sparkles } from "lucide-react";
 import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
-import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolIndex, IndexedPool } from "@/lib/poolIndex";
+import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolVolumeWindow, poolIndex, IndexedPool } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
 
 type SortKey = "tvl" | "vol" | "swaps";
