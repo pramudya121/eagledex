@@ -176,20 +176,24 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       eth = (window as any).ethereum;
     }
     if (!eth) return;
+    const addParams = [{
+      chainId: INTEGRALAYER.chainIdHex,
+      chainName: INTEGRALAYER.name,
+      nativeCurrency: { name: "IRL", symbol: INTEGRALAYER.symbol, decimals: 18 },
+      rpcUrls: [INTEGRALAYER.rpcUrl],
+      blockExplorerUrls: [INTEGRALAYER.explorer],
+    }];
     try {
       await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: INTEGRALAYER.chainIdHex }] });
     } catch (e: any) {
-      if (e.code === 4902 || e.data?.originalError?.code === 4902) {
-        await eth.request({
-          method: "wallet_addEthereumChain",
-          params: [{
-            chainId: INTEGRALAYER.chainIdHex,
-            chainName: INTEGRALAYER.name,
-            nativeCurrency: { name: "IRL", symbol: INTEGRALAYER.symbol, decimals: 18 },
-            rpcUrls: [INTEGRALAYER.rpcUrl],
-            blockExplorerUrls: [INTEGRALAYER.explorer],
-          }],
-        });
+      const code = e?.code ?? e?.data?.originalError?.code;
+      // 4902 = chain not added. Some wallets return -32603 / generic when chain unknown.
+      if (code === 4902 || code === -32603 || /Unrecognized chain|not added/i.test(e?.message ?? "")) {
+        await eth.request({ method: "wallet_addEthereumChain", params: addParams });
+        // After adding, attempt switch again to be sure the wallet is actually on it.
+        try {
+          await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: INTEGRALAYER.chainIdHex }] });
+        } catch {}
       } else { throw e; }
     }
   }, [walletId]);
