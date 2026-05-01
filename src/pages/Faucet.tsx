@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Contract, formatUnits } from "ethers";
-import { Droplet, Loader2, Sparkles, Clock, CheckCircle2, ExternalLink, Wallet, Zap, Gift, Layers } from "lucide-react";
+import { toast } from "sonner";
+import { Droplet, Loader2, Sparkles, Clock, CheckCircle2, ExternalLink, Wallet, Zap, Gift, Layers, RefreshCw, Shield, Plus, Copy } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { FAUCET_ABI } from "@/lib/abis";
@@ -11,21 +13,25 @@ const Faucet = () => {
   const { account, signer, readProvider } = useWeb3();
   const [tokens, setTokens] = useState<FaucetTokenInfo[]>([]);
   const [cooldown, setCooldown] = useState<bigint>(0n);
+  const [owner, setOwner] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [busyIdx, setBusyIdx] = useState<number | null>(null);
   const [busyAll, setBusyAll] = useState(false);
 
   const faucetRead = useMemo(() => getFaucet(readProvider), [readProvider]);
+  const isOwner = !!(owner && account && owner.toLowerCase() === account.toLowerCase());
 
   const load = useCallback(async () => {
     try {
-      const [cd, list] = await Promise.all([
+      const [cd, own, list] = await Promise.all([
         faucetRead.cooldown().catch(() => 0n),
+        faucetRead.owner().catch(() => null),
         readFaucetTokens(faucetRead, readProvider, account),
       ]);
-      setCooldown(cd); setTokens(list);
-    } finally { setLoading(false); }
+      setCooldown(cd); setOwner(own); setTokens(list);
+    } finally { setLoading(false); setRefreshing(false); }
   }, [faucetRead, readProvider, account]);
 
   useEffect(() => { load(); }, [load]);
