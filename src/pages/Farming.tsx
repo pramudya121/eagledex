@@ -473,35 +473,17 @@ const FarmActionDialog = ({ pool, onClose, onChanged }: { pool: FarmPool; onClos
       onClose();
     } catch {} finally { setBusy(false); }
   };
-      const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
-      if (mode === "stake") {
-        if (needApprove) {
-          const erc = new Contract(pool.stakingToken, ERC20_ABI, signer);
-          await sendTx(`Approve ${pool.stakingSymbol}`, () => erc.approve(CONTRACTS.FARM, (1n << 255n)));
-        }
-        await sendTx(`Stake ${pool.stakingSymbol}`, () => c.deposit(pool.pid, parsed));
-      } else {
-        await sendTx(`Unstake ${pool.stakingSymbol}`, () => c.withdraw(pool.pid, parsed));
-      }
-      onChanged();
-      onClose();
-    } catch {} finally { setBusy(false); }
-  };
-
   const emergency = async () => {
     if (!signer) return;
     if (!confirm("Emergency withdraw forfeits pending rewards. Continue?")) return;
     setBusy(true);
     try {
-      const FARM_ABI = (await import("@/lib/abis")).FARM_ABI;
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx(`Emergency withdraw ${pool.stakingSymbol}`, () => c.emergencyWithdraw(pool.pid));
       onChanged();
       onClose();
     } catch {} finally { setBusy(false); }
   };
-
-  const max = mode === "stake" ? myBalance : myStake;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
