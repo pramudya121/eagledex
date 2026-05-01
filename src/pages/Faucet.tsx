@@ -136,16 +136,37 @@ const Faucet = () => {
         </div>
       </div>
 
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
+        <div className="text-xs text-muted-foreground">
+          Contract:{" "}
+          <a href={explorerAddr(CONTRACTS.FAUCET)} target="_blank" rel="noreferrer" className="font-mono text-cyan-300 hover:underline inline-flex items-center gap-1">
+            {CONTRACTS.FAUCET.slice(0,6)}…{CONTRACTS.FAUCET.slice(-4)} <ExternalLink className="w-3 h-3"/>
+          </a>
+          <button onClick={() => copyAddr(CONTRACTS.FAUCET)} className="ml-1.5 text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3 inline"/></button>
+        </div>
+        <div className="flex items-center gap-2">
+          {isOwner && (
+            <Link to="/admin/faucet" className="h-9 px-3 rounded-lg border border-fuchsia-400/40 bg-fuchsia-500/10 text-fuchsia-300 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-fuchsia-500/20 transition">
+              <Shield className="w-3.5 h-3.5"/> Admin Panel
+            </Link>
+          )}
+          <button onClick={refresh} disabled={refreshing} className="h-9 px-3 rounded-lg border border-border bg-card/50 text-xs font-bold inline-flex items-center gap-1.5 hover:border-cyan-400/60 transition disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}/> Refresh
+          </button>
+        </div>
+      </div>
+
       {/* Claim All */}
       {account && tokens.length > 1 && (
         <div className="mb-5">
           <button
             onClick={claimAll}
-            disabled={busyAll || !signer}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-fuchsia-600 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-15px_hsl(195_90%_55%/0.7)] hover:shadow-[0_20px_50px_-15px_hsl(195_90%_55%/0.9)] transition-shadow disabled:opacity-50"
+            disabled={busyAll || !signer || !anyClaimable}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-fuchsia-600 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-15px_hsl(195_90%_55%/0.7)] hover:shadow-[0_20px_50px_-15px_hsl(195_90%_55%/0.9)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {busyAll ? <Loader2 className="w-5 h-5 animate-spin"/> : <Zap className="w-5 h-5"/>}
-            Claim All Tokens
+            {anyClaimable ? "Claim All Tokens" : allCdLeft > 0 ? `All on cooldown — wait ${Math.ceil(allCdLeft/1000)}s` : "Nothing to claim"}
           </button>
         </div>
       )}
