@@ -28,10 +28,6 @@ const Farming = () => {
 
   const farmRead = useMemo(() => getFarm(readProvider), [readProvider]);
 
-  if (!isReady) {
-    return <FarmingFallback />;
-  }
-
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -174,6 +170,10 @@ const Farming = () => {
       setHistoryKey(k => k + 1);
     } finally { setHarvestingAll(false); }
   };
+
+  if (!isReady) {
+    return <FarmingFallback />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
