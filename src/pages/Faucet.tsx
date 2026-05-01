@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Contract, formatUnits } from "ethers";
-import { Droplet, Loader2, Sparkles, Clock, CheckCircle2, ExternalLink, Wallet, Zap, Gift, Layers } from "lucide-react";
+import { toast } from "sonner";
+import { Droplet, Loader2, Sparkles, Clock, CheckCircle2, ExternalLink, Wallet, Zap, Gift, Layers, RefreshCw, Shield, Plus, Copy } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { FAUCET_ABI } from "@/lib/abis";
@@ -11,25 +13,32 @@ const Faucet = () => {
   const { account, signer, readProvider } = useWeb3();
   const [tokens, setTokens] = useState<FaucetTokenInfo[]>([]);
   const [cooldown, setCooldown] = useState<bigint>(0n);
+  const [owner, setOwner] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [busyIdx, setBusyIdx] = useState<number | null>(null);
   const [busyAll, setBusyAll] = useState(false);
 
   const faucetRead = useMemo(() => getFaucet(readProvider), [readProvider]);
+  const isOwner = !!(owner && account && owner.toLowerCase() === account.toLowerCase());
 
   const load = useCallback(async () => {
     try {
-      const [cd, list] = await Promise.all([
+      const [cd, own, list] = await Promise.all([
         faucetRead.cooldown().catch(() => 0n),
+        faucetRead.owner().catch(() => null),
         readFaucetTokens(faucetRead, readProvider, account),
       ]);
-      setCooldown(cd); setTokens(list);
-    } finally { setLoading(false); }
+      setCooldown(cd); setOwner(own); setTokens(list);
+    } finally { setLoading(false); setRefreshing(false); }
   }, [faucetRead, readProvider, account]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { const t = setInterval(() => load(), 30_000); return () => clearInterval(t); }, [load]);
+
+  const refresh = async () => { setRefreshing(true); await load(); };
 
   const claim = async (idx: number) => {
     if (!signer) return;
@@ -50,6 +59,30 @@ const Faucet = () => {
       await load();
     } catch {} finally { setBusyAll(false); }
   };
+
+  const addToWallet = async (t: FaucetTokenInfo) => {
+    try {
+      const eth: any = (window as any).ethereum;
+      if (!eth?.request) { toast.error("No injected wallet detected"); return; }
+      await eth.request({
+        method: "wallet_watchAsset",
+        params: { type: "ERC20", options: { address: t.address, symbol: t.symbol, decimals: t.decimals } },
+      });
+      toast.success(`Added ${t.symbol} to wallet`);
+    } catch {}
+  };
+
+  const copyAddr = async (addr: string) => {
+    try { await navigator.clipboard.writeText(addr); toast.success("Address copied"); } catch {}
+  };
+
+  const allReadyAt = tokens.length === 0 ? 0 : Math.max(...tokens.map(t => nextClaimAt(t.userLastClaimed, cooldown)));
+  const allCdLeft = Math.max(0, allReadyAt - now);
+  const anyClaimable = tokens.some(t => {
+    const cdLeft = Math.max(0, nextClaimAt(t.userLastClaimed, cooldown) - now);
+    const exhausted = t.maxClaims > 0n && t.userClaimed >= t.maxClaims;
+    return cdLeft === 0 && !exhausted && t.faucetBalance >= t.claimAmount;
+  });
 
   const totalAvailable = tokens.reduce((a, t) => a + Number(formatUnits(t.faucetBalance, t.decimals)), 0);
 
@@ -103,16 +136,37 @@ const Faucet = () => {
         </div>
       </div>
 
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
+        <div className="text-xs text-muted-foreground">
+          Contract:{" "}
+          <a href={explorerAddr(CONTRACTS.FAUCET)} target="_blank" rel="noreferrer" className="font-mono text-cyan-300 hover:underline inline-flex items-center gap-1">
+            {CONTRACTS.FAUCET.slice(0,6)}…{CONTRACTS.FAUCET.slice(-4)} <ExternalLink className="w-3 h-3"/>
+          </a>
+          <button onClick={() => copyAddr(CONTRACTS.FAUCET)} className="ml-1.5 text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3 inline"/></button>
+        </div>
+        <div className="flex items-center gap-2">
+          {isOwner && (
+            <Link to="/admin/faucet" className="h-9 px-3 rounded-lg border border-fuchsia-400/40 bg-fuchsia-500/10 text-fuchsia-300 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-fuchsia-500/20 transition">
+              <Shield className="w-3.5 h-3.5"/> Admin Panel
+            </Link>
+          )}
+          <button onClick={refresh} disabled={refreshing} className="h-9 px-3 rounded-lg border border-border bg-card/50 text-xs font-bold inline-flex items-center gap-1.5 hover:border-cyan-400/60 transition disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}/> Refresh
+          </button>
+        </div>
+      </div>
+
       {/* Claim All */}
       {account && tokens.length > 1 && (
         <div className="mb-5">
           <button
             onClick={claimAll}
-            disabled={busyAll || !signer}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-fuchsia-600 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-15px_hsl(195_90%_55%/0.7)] hover:shadow-[0_20px_50px_-15px_hsl(195_90%_55%/0.9)] transition-shadow disabled:opacity-50"
+            disabled={busyAll || !signer || !anyClaimable}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-fuchsia-600 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-15px_hsl(195_90%_55%/0.7)] hover:shadow-[0_20px_50px_-15px_hsl(195_90%_55%/0.9)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {busyAll ? <Loader2 className="w-5 h-5 animate-spin"/> : <Zap className="w-5 h-5"/>}
-            Claim All Tokens
+            {anyClaimable ? "Claim All Tokens" : allCdLeft > 0 ? `All on cooldown — wait ${Math.ceil(allCdLeft/1000)}s` : "Nothing to claim"}
           </button>
         </div>
       )}
@@ -202,14 +256,23 @@ const Faucet = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => claim(t.index)}
-                  disabled={!claimable || busyIdx === t.index}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-fuchsia-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_10px_25px_-10px_hsl(195_90%_55%/0.8)] transition"
-                >
-                  {busyIdx === t.index ? <Loader2 className="w-4 h-4 animate-spin"/> : <Gift className="w-4 h-4"/>}
-                  {!account ? "Connect wallet" : exhausted ? "Max reached" : empty ? "Empty" : onCooldown ? `Wait ${Math.ceil(cdLeft / 1000)}s` : "Claim"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => claim(t.index)}
+                    disabled={!claimable || busyIdx === t.index}
+                    className="flex-1 h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-fuchsia-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_10px_25px_-10px_hsl(195_90%_55%/0.8)] transition"
+                  >
+                    {busyIdx === t.index ? <Loader2 className="w-4 h-4 animate-spin"/> : <Gift className="w-4 h-4"/>}
+                    {!account ? "Connect wallet" : exhausted ? "Max reached" : empty ? "Empty" : onCooldown ? `Wait ${Math.ceil(cdLeft / 1000)}s` : "Claim"}
+                  </button>
+                  <button
+                    onClick={() => addToWallet(t)}
+                    title="Add token to wallet"
+                    className="h-11 w-11 rounded-xl border border-border bg-card/50 hover:border-cyan-400/60 transition grid place-items-center text-cyan-300"
+                  >
+                    <Plus className="w-4 h-4"/>
+                  </button>
+                </div>
               </div>
             );
           })}
