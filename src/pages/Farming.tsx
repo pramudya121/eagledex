@@ -194,11 +194,13 @@ const Farming = () => {
         </div>
       )}
 
+      <FarmHistory pools={pools} refreshKey={historyKey} />
+
       {activePid !== null && (
         <FarmActionDialog
           pool={pools.find(p => p.pid === activePid)!}
           onClose={() => setActivePid(null)}
-          onChanged={load}
+          onChanged={() => { load(); setHistoryKey(k => k + 1); }}
         />
       )}
     </div>
