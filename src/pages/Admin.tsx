@@ -146,13 +146,30 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
           <Input value={rpb} onChange={e => setRpb(e.target.value)} placeholder="0.1" className="font-mono text-xs"/>
         </Field>
       </div>
-      <button onClick={submit} disabled={busy}
+      <button onClick={() => { if (validate()) setConfirm(true); }} disabled={busy}
         className="mt-4 h-11 px-6 rounded-xl btn-primary-grad text-primary-foreground font-bold disabled:opacity-50 flex items-center gap-2">
         {busy ? <Loader2 className="w-4 h-4 animate-spin"/> : <Plus className="w-4 h-4"/>} Create pool
       </button>
       <p className="text-[11px] text-muted-foreground mt-2">
         Note: ensure the farm contract holds enough reward token for distributions.
       </p>
+
+      <ConfirmDialog
+        open={confirm}
+        title="Create new farm pool?"
+        description="This action is on-chain and cannot be undone. Verify the addresses below carefully."
+        confirmLabel="Yes, create pool"
+        busy={busy}
+        onCancel={() => setConfirm(false)}
+        onConfirm={submit}
+        details={
+          <>
+            <div><span className="text-muted-foreground">Staking:</span> <span className="break-all">{staking}</span></div>
+            <div><span className="text-muted-foreground">Reward:</span> <span className="break-all">{reward}</span></div>
+            <div><span className="text-muted-foreground">Reward / block:</span> {rpb}</div>
+          </>
+        }
+      />
     </div>
   );
 };
