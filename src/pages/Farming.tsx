@@ -5,7 +5,7 @@ import {
   Sprout, Loader2, RefreshCw, TrendingUp, Coins, Zap, Lock, Unlock,
   AlertTriangle, ShieldCheck, Settings, ExternalLink, Wallet, Search, Gift,
 } from "lucide-react";
-import { useWeb3 } from "@/lib/web3";
+import { isWalletInstalled, useWeb3, WALLETS } from "@/lib/web3";
 import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { ERC20_ABI, FARM_ABI } from "@/lib/abis";
 import { getFarm, readAllPools, readTokenMeta, FarmPool, computePendingLocal } from "@/lib/farm";
@@ -17,7 +17,7 @@ import { FarmHistory } from "@/components/FarmHistory";
 import { validateAmount } from "@/lib/validate";
 
 const Farming = () => {
-  const { account, signer, readProvider } = useWeb3();
+  const { isReady, account, signer, readProvider, connect } = useWeb3();
   const [pools, setPools] = useState<FarmPool[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -171,6 +171,24 @@ const Farming = () => {
     } finally { setHarvestingAll(false); }
   };
 
+  if (!isReady) {
+    return <FarmingFallback />;
+  }
+
+  if (!account || !signer) {
+    return (
+      <FarmingFallback
+        title="Connect Wallet"
+        description="Hubungkan wallet untuk melihat posisi farming, pending reward, dan menjalankan aksi stake, unstake, atau harvest."
+        actionLabel="Connect Wallet"
+        onAction={async () => {
+          const installed = WALLETS.find(w => w.id !== "walletconnect" && isWalletInstalled(w.id));
+          await connect(installed?.id ?? "metamask");
+        }}
+      />
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
       {/* Hero */}
@@ -296,6 +314,31 @@ const Farming = () => {
     </div>
   );
 };
+
+const FarmingFallback = ({ title = "Loading Farming", description = "Menyiapkan provider RPC dan status wallet agar data pool bisa dimuat dengan aman.", actionLabel, onAction }: {
+  title?: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void | Promise<void>;
+}) => (
+  <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+    <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/20 via-card/60 to-transparent p-8 min-h-[320px] grid place-items-center text-center">
+      <div className="absolute inset-0 pointer-events-none bg-primary/5" />
+      <div className="relative max-w-md">
+        <div className="w-16 h-16 mx-auto rounded-2xl btn-primary-grad grid place-items-center mb-4">
+          {onAction ? <Wallet className="w-7 h-7 text-primary-foreground" /> : <Loader2 className="w-7 h-7 text-primary-foreground animate-spin" />}
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-grad">{title}</h1>
+        <p className="text-sm text-muted-foreground mt-2">{description}</p>
+        {actionLabel && onAction && (
+          <button onClick={onAction} className="mt-5 px-5 py-2.5 rounded-xl btn-primary-grad text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-2">
+            <Wallet className="w-4 h-4" /> {actionLabel}
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+);
 
 const HeroStat = ({ icon: Icon, label, value, accent }: any) => (
   <div className={`rounded-xl p-3 backdrop-blur-md border ${accent ? "bg-primary/15 border-primary/40" : "bg-card/60 border-border/60"}`}>
