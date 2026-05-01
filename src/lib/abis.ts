@@ -65,3 +65,26 @@ export const MULTICALL_ABI = [
   "function getEthBalance(address addr) view returns (uint256)",
   "function getCurrentBlockTimestamp() view returns (uint256)",
 ];
+
+// MasterChef-like farming contract on Integralayer
+export const FARM_ABI = [
+  "function owner() view returns (address)",
+  "function poolInfo(uint256) view returns (address stakingToken, address rewardToken, uint256 lastRewardBlock, uint256 accRewardPerShare, uint256 rewardPerBlock, uint256 totalStaked)",
+  "function userInfo(uint256, address) view returns (uint256 amount, uint256 rewardDebt)",
+  "function pendingReward(uint256 _pid, address _user) view returns (uint256)",
+  "function deposit(uint256 _pid, uint256 _amount)",
+  "function withdraw(uint256 _pid, uint256 _amount)",
+  "function emergencyWithdraw(uint256 _pid)",
+  "function massUpdatePools()",
+  "function updatePool(uint256 _pid)",
+  "function addPool(address _stakingToken, address _rewardToken, uint256 _rewardPerBlock)",
+  "function updateRewardPerBlock(uint256 _pid, uint256 _rewardPerBlock)",
+  "function transferOwnership(address newOwner)",
+  "event Deposit(address indexed user, uint256 indexed pid, uint256 amount)",
+  "event Withdraw(address indexed user, uint256 indexed pid, uint256 amount)",
+  "event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount)",
+  "event RewardPaid(address indexed user, uint256 indexed pid, uint256 amount)",
+  "event PoolAdded(uint256 indexed pid, address stakingToken, address rewardToken, uint256 rewardPerBlock)",
+  "event RewardPerBlockUpdated(uint256 indexed pid, uint256 rewardPerBlock)",
+  "event OwnershipTransferred(address indexed prevOwner, address indexed newOwner)",
+];
