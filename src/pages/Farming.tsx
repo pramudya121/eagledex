@@ -94,14 +94,58 @@ const Farming = () => {
     return off;
   }, [readProvider, load, account]);
 
+  // Live block ticker — drives a smooth pendingReward counter on each card.
+  const [currentBlock, setCurrentBlock] = useState<bigint>(0n);
+  useEffect(() => {
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const b = await readProvider.getBlockNumber();
+        if (!cancelled) setCurrentBlock(BigInt(b));
+      } catch {}
+    };
+    tick();
+    const t = setInterval(tick, 4_000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [readProvider]);
+
+  // Search by symbol or address
+  const [query, setQuery] = useState("");
   const visible = useMemo(() => {
-    if (tab === "staked") return pools.filter(p => (p.userStaked ?? 0n) > 0n || (p.pending ?? 0n) > 0n);
-    return pools;
-  }, [pools, tab]);
+    let list = pools;
+    if (tab === "staked") list = list.filter(p => (p.userStaked ?? 0n) > 0n || (p.pending ?? 0n) > 0n);
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(p =>
+        p.stakingSymbol.toLowerCase().includes(q) ||
+        p.rewardSymbol.toLowerCase().includes(q) ||
+        p.stakingToken.toLowerCase().includes(q) ||
+        p.rewardToken.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [pools, tab, query]);
 
   const totalStakedAcrossPools = pools.reduce((a, p) => a + Number(formatUnits(p.totalStaked, p.stakingDecimals)), 0);
   const myActivePools = pools.filter(p => (p.userStaked ?? 0n) > 0n).length;
   const myPendingTotal = pools.reduce((a, p) => a + Number(formatUnits(p.pending ?? 0n, p.rewardDecimals)), 0);
+
+  const harvestablePids = pools.filter(p => (p.pending ?? 0n) > 0n).map(p => p.pid);
+  const [harvestingAll, setHarvestingAll] = useState(false);
+  const harvestAll = async () => {
+    if (!signer || !harvestablePids.length) return;
+    setHarvestingAll(true);
+    try {
+      const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
+      for (const pid of harvestablePids) {
+        try {
+          await sendTx(`Harvest pool #${pid}`, () => c.deposit(pid, 0n));
+        } catch { /* keep going to next pool */ }
+      }
+      load();
+      setHistoryKey(k => k + 1);
+    } finally { setHarvestingAll(false); }
+  };
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
