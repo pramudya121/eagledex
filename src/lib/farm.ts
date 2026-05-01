@@ -1,5 +1,5 @@
 import { Contract, JsonRpcProvider, JsonRpcSigner } from "ethers";
-import { CONTRACTS } from "./chain";
+import { CONTRACTS, TOKENS } from "./chain";
 import { FARM_ABI, ERC20_ABI } from "./abis";
 
 export type PoolInfoRaw = {
@@ -57,13 +57,22 @@ export async function readAllPools(c: Contract, max = 32): Promise<PoolInfoRaw[]
 }
 
 const tokMetaCache = new Map<string, { symbol: string; decimals: number }>();
+function registrySymbol(addr: string): { symbol: string; decimals: number } | null {
+  const a = addr.toLowerCase();
+  if (a === CONTRACTS.WETH.toLowerCase()) return { symbol: "WIRL", decimals: 18 };
+  const t = TOKENS.find(x => x.address.toLowerCase() === a);
+  return t ? { symbol: t.symbol, decimals: t.decimals } : null;
+}
 export async function readTokenMeta(addr: string, runner: JsonRpcProvider) {
   const key = addr.toLowerCase();
   if (tokMetaCache.has(key)) return tokMetaCache.get(key)!;
+  const reg = registrySymbol(addr);
+  if (reg) { tokMetaCache.set(key, reg); return reg; }
   try {
     const c = new Contract(addr, ERC20_ABI, runner);
     const [symbol, decimals] = await Promise.all([c.symbol(), c.decimals()]);
-    const m = { symbol: String(symbol), decimals: Number(decimals) };
+    const raw = String(symbol);
+    const m = { symbol: raw.toUpperCase() === "WETH" ? "WIRL" : raw, decimals: Number(decimals) };
     tokMetaCache.set(key, m);
     return m;
   } catch {

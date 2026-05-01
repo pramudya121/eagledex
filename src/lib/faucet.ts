@@ -41,7 +41,9 @@ async function tokenMeta(addr: string, p: JsonRpcProvider) {
   try {
     const c = new Contract(addr, ERC20_ABI, p);
     const [s, n, d] = await Promise.all([c.symbol(), c.name().catch(() => ""), c.decimals()]);
-    const m = { symbol: String(s), name: String(n || s), decimals: Number(d), logo: "" };
+    const rawSym = String(s);
+    const sym = rawSym.toUpperCase() === "WETH" ? "WIRL" : rawSym;
+    const m = { symbol: sym, name: String(n || sym), decimals: Number(d), logo: "" };
     meta.set(k, m); return m;
   } catch {
     const m = { symbol: addr.slice(0, 6), name: addr, decimals: 18, logo: "" };

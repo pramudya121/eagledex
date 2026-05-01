@@ -231,8 +231,10 @@ async function loadPair(addr: string) {
     ]);
     const m0 = tokenMeta(t0);
     const m1 = tokenMeta(t1);
-    const sym0 = m0?.symbol ?? await new Contract(t0, ERC20_ABI, provider).symbol().catch(() => t0.slice(0,6));
-    const sym1 = m1?.symbol ?? await new Contract(t1, ERC20_ABI, provider).symbol().catch(() => t1.slice(0,6));
+    const rawSym0 = m0?.symbol ?? await new Contract(t0, ERC20_ABI, provider).symbol().catch(() => t0.slice(0,6));
+    const rawSym1 = m1?.symbol ?? await new Contract(t1, ERC20_ABI, provider).symbol().catch(() => t1.slice(0,6));
+    const sym0 = String(rawSym0).toUpperCase() === "WETH" ? "WIRL" : String(rawSym0);
+    const sym1 = String(rawSym1).toUpperCase() === "WETH" ? "WIRL" : String(rawSym1);
     const dec0 = m0?.decimals ?? await new Contract(t0, ERC20_ABI, provider).decimals().catch(() => 18);
     const dec1 = m1?.decimals ?? await new Contract(t1, ERC20_ABI, provider).decimals().catch(() => 18);
 
