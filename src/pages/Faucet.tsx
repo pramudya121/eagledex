@@ -256,14 +256,23 @@ const Faucet = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => claim(t.index)}
-                  disabled={!claimable || busyIdx === t.index}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-fuchsia-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_10px_25px_-10px_hsl(195_90%_55%/0.8)] transition"
-                >
-                  {busyIdx === t.index ? <Loader2 className="w-4 h-4 animate-spin"/> : <Gift className="w-4 h-4"/>}
-                  {!account ? "Connect wallet" : exhausted ? "Max reached" : empty ? "Empty" : onCooldown ? `Wait ${Math.ceil(cdLeft / 1000)}s` : "Claim"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => claim(t.index)}
+                    disabled={!claimable || busyIdx === t.index}
+                    className="flex-1 h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-fuchsia-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_10px_25px_-10px_hsl(195_90%_55%/0.8)] transition"
+                  >
+                    {busyIdx === t.index ? <Loader2 className="w-4 h-4 animate-spin"/> : <Gift className="w-4 h-4"/>}
+                    {!account ? "Connect wallet" : exhausted ? "Max reached" : empty ? "Empty" : onCooldown ? `Wait ${Math.ceil(cdLeft / 1000)}s` : "Claim"}
+                  </button>
+                  <button
+                    onClick={() => addToWallet(t)}
+                    title="Add token to wallet"
+                    className="h-11 w-11 rounded-xl border border-border bg-card/50 hover:border-cyan-400/60 transition grid place-items-center text-cyan-300"
+                  >
+                    <Plus className="w-4 h-4"/>
+                  </button>
+                </div>
               </div>
             );
           })}
