@@ -177,15 +177,24 @@ const AddPoolCard = ({ signer, onChanged }: any) => {
 const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any; onChanged: () => void }) => {
   const [rpb, setRpb] = useState(formatUnits(pool.rewardPerBlock, 18));
   const [busy, setBusy] = useState(false);
+  const [confirmUpd, setConfirmUpd] = useState(false);
+
+  const askUpdate = () => {
+    if (!signer) return toast.error("Connect wallet");
+    try {
+      const v = parseUnits(rpb || "0", 18);
+      if (v < 0n) throw new Error();
+    } catch { return toast.error("Invalid value"); }
+    setConfirmUpd(true);
+  };
 
   const update = async () => {
-    if (!signer) return;
-    let v: bigint;
-    try { v = parseUnits(rpb || "0", 18); } catch { return toast.error("Invalid value"); }
     setBusy(true);
     try {
+      const v = parseUnits(rpb || "0", 18);
       const c = new Contract(CONTRACTS.FARM, FARM_ABI, signer);
       await sendTx(`Update pool #${pool.pid} reward`, () => c.updateRewardPerBlock(pool.pid, v));
+      setConfirmUpd(false);
       onChanged();
     } catch {} finally { setBusy(false); }
   };
@@ -199,6 +208,8 @@ const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any
       onChanged();
     } catch {} finally { setBusy(false); }
   };
+
+  const currentRpb = formatUnits(pool.rewardPerBlock, 18);
 
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-4">
@@ -217,7 +228,7 @@ const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any
         <Field label="Reward per block">
           <Input value={rpb} onChange={e => setRpb(e.target.value)} className="font-mono text-xs h-9"/>
         </Field>
-        <button onClick={update} disabled={busy}
+        <button onClick={askUpdate} disabled={busy}
           className="h-9 px-4 rounded-lg btn-primary-grad text-primary-foreground text-xs font-bold disabled:opacity-50">
           Update
         </button>
@@ -226,6 +237,23 @@ const PoolAdminRow = ({ pool, signer, onChanged }: { pool: FarmPool; signer: any
           Sync pool
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmUpd}
+        title={`Update reward rate for pool #${pool.pid}?`}
+        description="This changes emissions for all stakers in this pool."
+        confirmLabel="Yes, update rate"
+        busy={busy}
+        onCancel={() => setConfirmUpd(false)}
+        onConfirm={update}
+        details={
+          <>
+            <div><span className="text-muted-foreground">Pool:</span> {pool.stakingSymbol} → {pool.rewardSymbol}</div>
+            <div><span className="text-muted-foreground">Current:</span> {currentRpb}</div>
+            <div><span className="text-muted-foreground">New:</span> {rpb}</div>
+          </>
+        }
+      />
     </div>
   );
 };
