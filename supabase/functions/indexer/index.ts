@@ -81,18 +81,41 @@ Deno.serve(async (req) => {
 
   try {
     const head = await provider.getBlockNumber();
+
+    // Discover known pairs first (cheap) so we can compute a sane start block
+    const len = Number(await factory.allPairsLength());
+    const pairs: string[] = [];
+    for (let i = 0; i < len; i++) pairs.push((await factory.allPairs(i)).toLowerCase());
+    const knownPairs = new Set(pairs);
+
+    // Earliest known created_block from DB (so cursor never skips history)
+    const { data: earliestRow } = await supabase
+      .from("pairs_state").select("created_block")
+      .eq("chain_id", CHAIN_ID).not("created_block", "is", null)
+      .order("created_block", { ascending: true }).limit(1).maybeSingle();
+    const earliest = Number(earliestRow?.created_block ?? 0);
+
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
-    let from = cur?.last_block ? Number(cur.last_block) + 1 : Math.max(0, head - 5_000);
+    const cursorBlock = Number(cur?.last_block ?? 0);
+
+    // BACKFILL: pairs exist but no events yet → rewind cursor to cover ~last 48h of activity (≈ 50k blocks).
+    const { count: evtCount } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
+    const BACKFILL_BLOCKS = 50_000;
+
+    let from: number;
+    if (pairs.length > 0 && (evtCount ?? 0) === 0) {
+      from = Math.max(0, head - BACKFILL_BLOCKS);
+      console.log(`backfill: rewinding to head-${BACKFILL_BLOCKS} = ${from}`);
+    } else if (cursorBlock === 0) {
+      from = Math.max(0, head - 5_000);
+    } else {
+      from = cursorBlock + 1;
+    }
     const to = Math.min(head, from + MAX_BLOCKS_PER_CALL - 1);
     if (from > to) {
       return json({ ok: true, head, from, to, scanned: 0, message: "up to date" });
     }
 
-    // Discover known pairs
-    const len = Number(await factory.allPairsLength());
-    const pairs: string[] = [];
-    for (let i = 0; i < len; i++) pairs.push((await factory.allPairs(i)).toLowerCase());
-    const knownPairs = new Set(pairs);
 
     // Upsert pair metadata (cheap if already exists)
     for (const p of pairs) {

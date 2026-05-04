@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { formatUnits } from "ethers";
-import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, DollarSign, BarChart3, LineChart as LineIcon } from "lucide-react";
+import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, DollarSign, BarChart3, LineChart as LineIcon, Cloud } from "lucide-react";
 import { explorerTx } from "@/lib/chain";
 import { usePoolIndex, poolTVL, poolVolume } from "@/lib/poolIndex";
+import { useCloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PriceChart from "@/components/PriceChart";
 import {
@@ -12,11 +13,23 @@ import {
 
 const Analytics = () => {
   const state = usePoolIndex();
+  const cloud = useCloudIndex();
   const pools = useMemo(() => Object.values(state.pools), [state.pools, state.lastUpdated]);
 
   const totalTVL = pools.reduce((a, p) => a + poolTVL(p), 0);
-  const totalVol = pools.reduce((a, p) => a + poolVolume(p), 0);
-  const totalSwaps = pools.reduce((a, p) => a + p.swapCount, 0);
+  // Cross-user 24h volume from cloud (sum of token-side volume in pair units).
+  const cloudVol24h = useMemo(
+    () => Object.values(cloud.volume24h).reduce((a, v) => a + (v.volume0 + v.volume1) / 1e18, 0),
+    [cloud.volume24h],
+  );
+  const cloudSwaps24h = useMemo(
+    () => Object.values(cloud.volume24h).reduce((a, v) => a + v.swap_count, 0),
+    [cloud.volume24h],
+  );
+  const localVol = pools.reduce((a, p) => a + poolVolume(p), 0);
+  const usingCloud = cloudVol24h > 0;
+  const totalVol = usingCloud ? cloudVol24h : localVol;
+  const totalSwaps = usingCloud ? cloudSwaps24h : pools.reduce((a, p) => a + p.swapCount, 0);
 
   const top = useMemo(() => [...pools].sort((a, b) => poolTVL(b) - poolTVL(a)).slice(0, 8), [pools]);
   const recent = state.recentSwaps.slice(0, 15);
@@ -135,18 +148,25 @@ const Analytics = () => {
         </div>
         <div className="glass rounded-2xl p-6 bg-gradient-to-br from-primary/10 to-transparent">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Trading Volume</div>
-            <Zap className="w-4 h-4 text-primary"/>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Trading Volume {usingCloud ? "(24h)" : "(recent)"}</div>
+            <div className="flex items-center gap-2">
+              {usingCloud && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-bold">
+                  <Cloud className="w-3 h-3"/> CLOUD
+                </span>
+              )}
+              <Zap className="w-4 h-4 text-primary"/>
+            </div>
           </div>
           <div className="text-4xl font-extrabold">{totalVol.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
-          <div className="text-xs text-muted-foreground mt-2">~50k recent blocks</div>
+          <div className="text-xs text-muted-foreground mt-2">{usingCloud ? "Cross-user, last 24 hours" : "~50k recent blocks (local cache)"}</div>
         </div>
       </div>
 
       {/* Mini stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MiniStat icon={Layers}     label="Total Pairs"  value={String(pools.length)} />
-        <MiniStat icon={Activity}   label="Total Swaps"  value={String(totalSwaps)} />
+        <MiniStat icon={Activity}   label={usingCloud ? "Swaps (24h)" : "Total Swaps"}  value={String(totalSwaps)} />
         <MiniStat icon={TrendingUp} label="Avg TVL/pool" value={pools.length ? (totalTVL/pools.length).toLocaleString(undefined,{maximumFractionDigits:2}) : "0"} />
         <MiniStat icon={Zap}        label="Fee tier"     value="0.30%" />
       </div>
