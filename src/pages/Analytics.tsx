@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { formatUnits } from "ethers";
-import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, DollarSign, BarChart3, LineChart as LineIcon } from "lucide-react";
+import { Loader2, TrendingUp, Activity, Layers, Zap, ArrowUpRight, DollarSign, BarChart3, LineChart as LineIcon, Cloud } from "lucide-react";
 import { explorerTx } from "@/lib/chain";
 import { usePoolIndex, poolTVL, poolVolume } from "@/lib/poolIndex";
+import { useCloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PriceChart from "@/components/PriceChart";
 import {
@@ -12,11 +13,23 @@ import {
 
 const Analytics = () => {
   const state = usePoolIndex();
+  const cloud = useCloudIndex();
   const pools = useMemo(() => Object.values(state.pools), [state.pools, state.lastUpdated]);
 
   const totalTVL = pools.reduce((a, p) => a + poolTVL(p), 0);
-  const totalVol = pools.reduce((a, p) => a + poolVolume(p), 0);
-  const totalSwaps = pools.reduce((a, p) => a + p.swapCount, 0);
+  // Cross-user 24h volume from cloud (sum of token-side volume in pair units).
+  const cloudVol24h = useMemo(
+    () => Object.values(cloud.volume24h).reduce((a, v) => a + (v.volume0 + v.volume1) / 1e18, 0),
+    [cloud.volume24h],
+  );
+  const cloudSwaps24h = useMemo(
+    () => Object.values(cloud.volume24h).reduce((a, v) => a + v.swap_count, 0),
+    [cloud.volume24h],
+  );
+  const localVol = pools.reduce((a, p) => a + poolVolume(p), 0);
+  const usingCloud = cloudVol24h > 0;
+  const totalVol = usingCloud ? cloudVol24h : localVol;
+  const totalSwaps = usingCloud ? cloudSwaps24h : pools.reduce((a, p) => a + p.swapCount, 0);
 
   const top = useMemo(() => [...pools].sort((a, b) => poolTVL(b) - poolTVL(a)).slice(0, 8), [pools]);
   const recent = state.recentSwaps.slice(0, 15);
