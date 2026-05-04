@@ -97,16 +97,38 @@ Deno.serve(async (req) => {
 
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
     const cursorBlock = Number(cur?.last_block ?? 0);
-    // If we know a factory pair was created earlier than our cursor and we have no events yet, rewind.
-    let from = cursorBlock + 1;
-    if (earliest > 0 && cursorBlock > earliest) {
-      const { count } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
-      if (!count || count === 0) {
-        from = earliest;
-        console.log(`rewinding cursor to earliest pair block ${earliest}`);
+
+    // BACKFILL MODE: pairs exist but no events and no created_block info → discover PairCreated from genesis.
+    const { count: evtCount } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
+    let backfillFrom: number | null = null;
+    if (pairs.length > 0 && (evtCount ?? 0) === 0 && earliest === 0) {
+      // Find earliest PairCreated by walking backward in big chunks (factory-only filter is light).
+      console.log("backfill: searching for earliest PairCreated...");
+      const CHUNK = 50_000;
+      let walk = head;
+      while (walk > 0 && backfillFrom === null) {
+        const lo = Math.max(0, walk - CHUNK + 1);
+        const logs = await getLogsRetry(provider, { address: FACTORY, fromBlock: lo, toBlock: walk, topics: [TOPIC_PAIR_CREATED] });
+        if (logs.length > 0) {
+          backfillFrom = Math.min(...logs.map(l => l.blockNumber));
+          console.log(`backfill: earliest PairCreated at block ${backfillFrom}`);
+          break;
+        }
+        walk = lo - 1;
+        if (lo === 0) break;
       }
+    }
+
+    let from: number;
+    if (backfillFrom !== null) {
+      from = backfillFrom;
+    } else if (earliest > 0 && cursorBlock > earliest && (evtCount ?? 0) === 0) {
+      from = earliest;
+      console.log(`rewinding cursor to earliest pair block ${earliest}`);
     } else if (cursorBlock === 0) {
       from = earliest > 0 ? earliest : Math.max(0, head - 5_000);
+    } else {
+      from = cursorBlock + 1;
     }
     const to = Math.min(head, from + MAX_BLOCKS_PER_CALL - 1);
     if (from > to) {
