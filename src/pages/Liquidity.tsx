@@ -513,10 +513,12 @@ const Liquidity = () => {
               </Button>
             )}
           </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="remove" className="mt-4">
-          <div className="form-surface p-5 space-y-4">
+          <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)] hover:shadow-[0_40px_100px_-30px_hsl(var(--primary)/0.6)] transition-shadow duration-500">
+          <div className="form-surface p-5 space-y-4 rounded-[calc(1.5rem-1.5px)]">
             <div className="form-field p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">YOUR LP TOKENS</span>
