@@ -1,0 +1,1 @@
+UPDATE public.indexer_cursor SET last_block = 0, updated_at = now() WHERE chain_id = 26218;
