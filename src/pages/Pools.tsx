@@ -187,11 +187,19 @@ const BigStat = ({ label, value, sub, highlight, success }: any) => (
   </div>
 );
 
-const PoolCard = ({ p }: { p: IndexedPool }) => {
+const PoolCard = ({ p, cloudVol24, cloudVol7 }: { p: IndexedPool; cloudVol24?: { volume0: number; volume1: number; swap_count: number }; cloudVol7?: { volume0: number; volume1: number; swap_count: number } }) => {
   const tvl = poolTVL(p);
   const price = poolPrice(p);
   const vol = poolVolume(p);
-  const vol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
+  const localVol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
+  // Prefer Cloud-aggregated volume (cross-user, cross-device); fallback to local cache.
+  const vol24 = cloudVol24
+    ? Number(formatUnits(BigInt(Math.floor(cloudVol24.volume0)), p.decimals0)) + Number(formatUnits(BigInt(Math.floor(cloudVol24.volume1)), p.decimals1))
+    : localVol24;
+  const vol7 = cloudVol7
+    ? Number(formatUnits(BigInt(Math.floor(cloudVol7.volume0)), p.decimals0)) + Number(formatUnits(BigInt(Math.floor(cloudVol7.volume1)), p.decimals1))
+    : 0;
+  const cloudSwaps = cloudVol24?.swap_count ?? 0;
   const [chartOpen, setChartOpen] = useState(false);
   return (
     <div className="glass rounded-2xl p-5 hover:border-primary/60 transition-all hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-transparent">
@@ -201,6 +209,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
           {p.logo1 ? <img src={p.logo1} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol1[0]}</div>}
         </div>
         <div className="font-bold text-lg">{p.symbol0}<span className="text-muted-foreground mx-1">/</span>{p.symbol1}</div>
+        {cloudVol24 && <span title="Volume 24h sourced from Cloud-indexed events" className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 border border-green-500/30 font-bold">CLOUD</span>}
         <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="ml-auto text-muted-foreground hover:text-primary">
           <ExternalLink className="w-4 h-4" />
         </a>
@@ -212,8 +221,8 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
           <div className="font-bold text-grad text-sm font-mono">{tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
         </div>
         <div className="rounded-xl bg-secondary/40 p-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Vol 24h</div>
-          <div className="font-bold text-sm font-mono">{vol24.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Vol 24h {cloudVol7 && <span className="ml-auto text-muted-foreground/70">7d {vol7.toLocaleString(undefined,{maximumFractionDigits:0})}</span>}</div>
+          <div className="font-bold text-sm font-mono">{vol24.toLocaleString(undefined,{maximumFractionDigits:2})}{cloudSwaps > 0 && <span className="text-[10px] text-muted-foreground ml-1">· {cloudSwaps} swaps</span>}</div>
         </div>
       </div>
 
