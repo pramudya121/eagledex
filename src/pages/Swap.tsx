@@ -16,7 +16,6 @@ import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
 import { usePersistedPref } from "@/lib/userPrefs";
-import MovingBorder from "@/components/ui-fx/MovingBorder";
 
 const Swap = () => {
   const { account, signer, readProvider, router, isCorrectChain } = useWeb3();
@@ -242,8 +241,8 @@ const Swap = () => {
         <p className="text-sm text-muted-foreground mt-1.5">Multi-hop routing · MEV-aware slippage · 0 hidden fees</p>
       </div>
 
-      {/* Premium moving-border ring around the swap surface */}
-      <MovingBorder borderRadius="1.5rem" duration={9} containerClassName="shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)]">
+      {/* Premium gradient ring around the swap surface */}
+      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)]">
         <div className="form-surface p-5 relative rounded-[calc(1.5rem-1.5px)]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -478,7 +477,7 @@ const Swap = () => {
             : <><Zap className="w-4 h-4 mr-2" /> Swap</>}
         </Button>
       </div>
-      </MovingBorder>
+      </div>
     </div>
   );
 };

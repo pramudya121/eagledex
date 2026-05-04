@@ -1,15 +1,9 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeftRight, Droplets, Layers, BarChart3, Shield, Zap, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
-import { usePoolIndex, poolTVL, poolPrice } from "@/lib/poolIndex";
+import TokenGlobe from "@/components/TokenGlobe";
+import { usePoolIndex, poolTVL } from "@/lib/poolIndex";
 import { useMemo } from "react";
-import { TOKENS } from "@/lib/chain";
-import ShimmerButton from "@/components/ui-fx/ShimmerButton";
-import Spotlight from "@/components/ui-fx/Spotlight";
-import Marquee from "@/components/ui-fx/Marquee";
-import RotatingTokenLogo from "@/components/ui-fx/RotatingTokenLogo";
-import NumberTicker from "@/components/ui-fx/NumberTicker";
-import TextGenerateEffect from "@/components/ui-fx/TextGenerateEffect";
 
 const Home = () => {
   const state = usePoolIndex();
@@ -20,29 +14,10 @@ const Home = () => {
     return { pools: pools.length, tvl, swaps };
   }, [state.pools, state.lastUpdated]);
 
-  // Token ticker — derive a representative price per token from pools
-  const ticker = useMemo(() => {
-    const tokens = TOKENS.filter(t => !t.isNative);
-    return tokens.map(t => {
-      const pool = Object.values(state.pools).find(
-        p => p.token0.toLowerCase() === t.address.toLowerCase() || p.token1.toLowerCase() === t.address.toLowerCase(),
-      );
-      let price = 0;
-      if (pool) {
-        const p01 = poolPrice(pool);
-        price = pool.token0.toLowerCase() === t.address.toLowerCase() ? p01 : (p01 ? 1 / p01 : 0);
-      }
-      return { ...t, price };
-    });
-  }, [state.pools, state.lastUpdated]);
-
   return (
     <div className="animate-slide-up">
       {/* HERO */}
-      <section className="relative grid lg:grid-cols-2 gap-10 items-center pt-4 pb-12 isolate">
-        <Spotlight className="-top-32 -left-10 w-[520px] h-[480px]" />
-        <Spotlight className="-bottom-20 right-0 w-[460px] h-[400px]" fill="hsl(var(--primary-glow))" />
-
+      <section className="relative grid lg:grid-cols-2 gap-10 items-center pt-4 pb-12">
         <div className="space-y-6 relative z-10">
           <div className="flex items-center gap-3">
             <Logo size={120} />
@@ -53,18 +28,16 @@ const Home = () => {
             <span className="text-muted-foreground">· Chain 26218</span>
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1]">
-            <TextGenerateEffect words="Trade the universe of" /> <br />
-            <span className="text-grad"><TextGenerateEffect words="on-chain tokens." stagger={120} /></span>
+            Trade the universe of <br />
+            <span className="text-grad">on-chain</span> tokens.
           </h1>
           <p className="text-sm md:text-base text-muted-foreground max-w-lg">
             EAGLEDEX is a fully on-chain AMM built on Integralayer. Swap, provide liquidity, and earn fees with
             transparent routing, real-time pool analytics, and a sleek pitch-black UI.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link to="/swap">
-              <ShimmerButton className="px-6 h-12">
-                Launch Swap <ArrowRight className="w-4 h-4" />
-              </ShimmerButton>
+            <Link to="/swap" className="btn-primary-grad text-primary-foreground rounded-2xl px-6 h-12 inline-flex items-center gap-2 font-bold">
+              Launch Swap <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/liquidity" className="rounded-2xl px-6 h-12 inline-flex items-center gap-2 font-bold border border-border bg-card hover:border-primary/60 transition">
               <Droplets className="w-4 h-4 text-primary" /> Provide Liquidity
@@ -72,33 +45,17 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-3 max-w-md pt-2">
-            <Stat label="Total Pools" value={stats.pools} />
-            <Stat label="On-chain TVL" value={stats.tvl} decimals={1} />
-            <Stat label="Total Swaps" value={stats.swaps} />
+            <Stat label="Total Pools" value={String(stats.pools)} />
+            <Stat label="On-chain TVL" value={stats.tvl.toLocaleString(undefined,{maximumFractionDigits:1})} />
+            <Stat label="Total Swaps" value={String(stats.swaps)} />
           </div>
         </div>
 
-        {/* 3D Rotating token globe — pure CSS, replaces three.js dependency for hero */}
-        <div className="relative w-full grid place-items-center">
-          <RotatingTokenLogo size={420} className="max-w-full" />
-        </div>
-      </section>
-
-      {/* LIVE TICKER (Marquee) */}
-      <section className="my-6">
-        <div className="glass rounded-2xl py-3 overflow-hidden">
-          <Marquee speed={40}>
-            {ticker.map((t, i) => (
-              <div key={`${t.address}-${i}`} className="flex items-center gap-2 px-4">
-                <img src={t.logo} alt={t.symbol} className="w-6 h-6 rounded-full" />
-                <span className="font-bold text-sm">{t.symbol}</span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {t.price > 0 ? t.price.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"}
-                </span>
-                <span className="w-1 h-1 rounded-full bg-primary/60" />
-              </div>
-            ))}
-          </Marquee>
+        {/* 3D Globe — fully borderless. The TokenGlobe canvas is transparent
+            and renders directly on top of the nebula background — no wrappers,
+            no radial overlays that could leave a visible disc. */}
+        <div className="w-full aspect-square max-w-[460px] mx-auto sm:max-w-[520px] lg:max-w-[560px]">
+          <TokenGlobe height={undefined as unknown as number} />
         </div>
       </section>
 
@@ -116,22 +73,18 @@ const Home = () => {
       <section className="glass rounded-3xl p-8 md:p-10 text-center my-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5">
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Ready to <span className="text-grad">trade</span>?</h2>
         <p className="text-muted-foreground max-w-lg mx-auto">Connect your wallet and start swapping in seconds. All actions are on-chain, transparent, and verifiable on the explorer.</p>
-        <Link to="/swap" className="inline-block mt-5">
-          <ShimmerButton className="px-7 h-12">
-            Open EAGLEDEX <ArrowRight className="w-4 h-4" />
-          </ShimmerButton>
+        <Link to="/swap" className="mt-5 btn-primary-grad text-primary-foreground rounded-2xl px-7 h-12 inline-flex items-center gap-2 font-bold">
+          Open EAGLEDEX <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
     </div>
   );
 };
 
-const Stat = ({ label, value, decimals = 0 }: { label: string; value: number; decimals?: number }) => (
+const Stat = ({ label, value }: { label: string; value: string }) => (
   <div className="glass rounded-xl p-3">
     <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-    <div className="font-extrabold text-grad text-lg truncate">
-      <NumberTicker value={value} decimals={decimals} />
-    </div>
+    <div className="font-extrabold text-grad text-lg truncate">{value}</div>
   </div>
 );
 

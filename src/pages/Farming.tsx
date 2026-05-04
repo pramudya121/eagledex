@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { FarmHistory } from "@/components/FarmHistory";
 import { validateAmount } from "@/lib/validate";
-import { GlowingStarsBackground } from "@/components/ui-fx/GlowingStars";
 
 const Farming = () => {
   const { isReady, account, signer, readProvider, connect } = useWeb3();
@@ -420,7 +419,6 @@ const FarmCard = ({ pool, currentBlock, onAction, onChanged }: {
 
   return (
     <div className="group relative glass rounded-2xl p-5 transition-all hover:-translate-y-1 hover:border-primary/60 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
-      <GlowingStarsBackground density={22} />
       <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/10 blur-3xl group-hover:bg-primary/20 transition-colors" />
       <div className="relative">
         <div className="flex items-center justify-between mb-4">

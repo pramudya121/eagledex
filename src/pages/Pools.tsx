@@ -6,7 +6,6 @@ import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolVolumeWindow, poolIndex, IndexedPool } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
-import BackgroundGradient from "@/components/ui-fx/BackgroundGradient";
 
 type SortKey = "tvl" | "vol" | "swaps";
 
@@ -167,7 +166,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
   const vol = poolVolume(p);
   const vol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
   return (
-    <BackgroundGradient containerClassName="hover:-translate-y-1 transition-transform" className="p-5 bg-gradient-to-br from-primary/5 to-transparent">
+    <div className="glass rounded-2xl p-5 hover:border-primary/60 transition-all hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-transparent">
       <div className="flex items-center gap-2 mb-4">
         <div className="flex -space-x-2">
           {p.logo0 ? <img src={p.logo0} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol0[0]}</div>}
@@ -206,7 +205,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
           <Plus className="w-3 h-3"/> Add Liquidity
         </Link>
       </div>
-    </BackgroundGradient>
+    </div>
   );
 };
 
