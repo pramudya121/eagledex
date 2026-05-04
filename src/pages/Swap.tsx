@@ -16,6 +16,7 @@ import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
 import { usePersistedPref } from "@/lib/userPrefs";
+import FormOrb3D from "@/components/FormOrb3D";
 
 const Swap = () => {
   const { account, signer, readProvider, router, isCorrectChain } = useWeb3();
