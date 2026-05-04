@@ -6,6 +6,7 @@ import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolVolumeWindow, poolIndex, IndexedPool } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
+import PoolChartDialog from "@/components/PoolChartDialog";
 
 type SortKey = "tvl" | "vol" | "swaps";
 
@@ -88,7 +89,7 @@ const Pools = () => {
         <button onClick={() => poolIndex.refresh()} className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
           <RefreshCw className="w-3.5 h-3.5"/> Refresh
         </button>
-        <Link to="/liquidity" className="px-4 py-2 rounded-lg btn-primary-grad text-primary-foreground font-bold text-xs flex items-center gap-1.5">
+        <Link to="/create-pool" className="px-4 py-2 rounded-lg btn-primary-grad text-primary-foreground font-bold text-xs flex items-center gap-1.5">
           <Plus className="w-3.5 h-3.5"/> Create Pool
         </Link>
       </div>
@@ -165,6 +166,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
   const price = poolPrice(p);
   const vol = poolVolume(p);
   const vol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
+  const [chartOpen, setChartOpen] = useState(false);
   return (
     <div className="glass rounded-2xl p-5 hover:border-primary/60 transition-all hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-transparent">
       <div className="flex items-center gap-2 mb-4">
@@ -197,14 +199,19 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
         <div className="flex justify-between"><span className="text-muted-foreground">Swaps</span><span className="font-mono">{p.swapCount}</span></div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <button onClick={() => setChartOpen(true)} className="text-center py-2 rounded-xl bg-secondary border border-border hover:border-primary text-xs font-semibold flex items-center justify-center gap-1">
+          <BarChart3 className="w-3 h-3"/> Chart
+        </button>
         <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="text-center py-2 rounded-xl bg-secondary border border-border hover:border-primary text-xs font-semibold flex items-center justify-center gap-1">
-          ↗ Details
+          ↗ Tx
         </a>
         <Link to="/liquidity" className="text-center py-2 rounded-xl btn-primary-grad text-primary-foreground text-xs font-bold flex items-center justify-center gap-1">
-          <Plus className="w-3 h-3"/> Add Liquidity
+          <Plus className="w-3 h-3"/> Add
         </Link>
       </div>
+
+      <PoolChartDialog pool={p} open={chartOpen} onOpenChange={setChartOpen} />
     </div>
   );
 };
