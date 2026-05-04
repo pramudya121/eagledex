@@ -98,35 +98,16 @@ Deno.serve(async (req) => {
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
     const cursorBlock = Number(cur?.last_block ?? 0);
 
-    // BACKFILL MODE: pairs exist but no events and no created_block info → discover PairCreated from genesis.
+    // BACKFILL: pairs exist but no events yet → rewind cursor to cover ~last 48h of activity (≈ 50k blocks).
     const { count: evtCount } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
-    let backfillFrom: number | null = null;
-    if (pairs.length > 0 && (evtCount ?? 0) === 0 && earliest === 0) {
-      // Find earliest PairCreated by walking backward in big chunks (factory-only filter is light).
-      console.log("backfill: searching for earliest PairCreated...");
-      const CHUNK = 50_000;
-      let walk = head;
-      while (walk > 0 && backfillFrom === null) {
-        const lo = Math.max(0, walk - CHUNK + 1);
-        const logs = await getLogsRetry(provider, { address: FACTORY, fromBlock: lo, toBlock: walk, topics: [TOPIC_PAIR_CREATED] });
-        if (logs.length > 0) {
-          backfillFrom = Math.min(...logs.map(l => l.blockNumber));
-          console.log(`backfill: earliest PairCreated at block ${backfillFrom}`);
-          break;
-        }
-        walk = lo - 1;
-        if (lo === 0) break;
-      }
-    }
+    const BACKFILL_BLOCKS = 50_000;
 
     let from: number;
-    if (backfillFrom !== null) {
-      from = backfillFrom;
-    } else if (earliest > 0 && cursorBlock > earliest && (evtCount ?? 0) === 0) {
-      from = earliest;
-      console.log(`rewinding cursor to earliest pair block ${earliest}`);
+    if (pairs.length > 0 && (evtCount ?? 0) === 0) {
+      from = Math.max(0, head - BACKFILL_BLOCKS);
+      console.log(`backfill: rewinding to head-${BACKFILL_BLOCKS} = ${from}`);
     } else if (cursorBlock === 0) {
-      from = earliest > 0 ? earliest : Math.max(0, head - 5_000);
+      from = Math.max(0, head - 5_000);
     } else {
       from = cursorBlock + 1;
     }
