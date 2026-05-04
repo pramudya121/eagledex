@@ -14,10 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      indexer_cursor: {
+        Row: {
+          chain_id: number
+          last_block: number
+          updated_at: string
+        }
+        Insert: {
+          chain_id: number
+          last_block?: number
+          updated_at?: string
+        }
+        Update: {
+          chain_id?: number
+          last_block?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pair_events: {
+        Row: {
+          amount0: number | null
+          amount0_in: number | null
+          amount0_out: number | null
+          amount1: number | null
+          amount1_in: number | null
+          amount1_out: number | null
+          block_number: number
+          block_ts: string
+          chain_id: number
+          created_at: string
+          event_type: string
+          id: number
+          log_index: number
+          pair: string
+          reserve0: number | null
+          reserve1: number | null
+          sender: string | null
+          to_addr: string | null
+          token0: string | null
+          token1: string | null
+          tx_hash: string
+        }
+        Insert: {
+          amount0?: number | null
+          amount0_in?: number | null
+          amount0_out?: number | null
+          amount1?: number | null
+          amount1_in?: number | null
+          amount1_out?: number | null
+          block_number: number
+          block_ts: string
+          chain_id: number
+          created_at?: string
+          event_type: string
+          id?: number
+          log_index: number
+          pair: string
+          reserve0?: number | null
+          reserve1?: number | null
+          sender?: string | null
+          to_addr?: string | null
+          token0?: string | null
+          token1?: string | null
+          tx_hash: string
+        }
+        Update: {
+          amount0?: number | null
+          amount0_in?: number | null
+          amount0_out?: number | null
+          amount1?: number | null
+          amount1_in?: number | null
+          amount1_out?: number | null
+          block_number?: number
+          block_ts?: string
+          chain_id?: number
+          created_at?: string
+          event_type?: string
+          id?: number
+          log_index?: number
+          pair?: string
+          reserve0?: number | null
+          reserve1?: number | null
+          sender?: string | null
+          to_addr?: string | null
+          token0?: string | null
+          token1?: string | null
+          tx_hash?: string
+        }
+        Relationships: []
+      }
+      pairs_state: {
+        Row: {
+          chain_id: number
+          created_block: number | null
+          decimals0: number
+          decimals1: number
+          pair: string
+          reserve0: number
+          reserve1: number
+          symbol0: string | null
+          symbol1: string | null
+          token0: string
+          token1: string
+          total_supply: number
+          updated_at: string
+        }
+        Insert: {
+          chain_id: number
+          created_block?: number | null
+          decimals0?: number
+          decimals1?: number
+          pair: string
+          reserve0?: number
+          reserve1?: number
+          symbol0?: string | null
+          symbol1?: string | null
+          token0: string
+          token1: string
+          total_supply?: number
+          updated_at?: string
+        }
+        Update: {
+          chain_id?: number
+          created_block?: number | null
+          decimals0?: number
+          decimals1?: number
+          pair?: string
+          reserve0?: number
+          reserve1?: number
+          symbol0?: string | null
+          symbol1?: string | null
+          token0?: string
+          token1?: string
+          total_supply?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      pair_volume_24h: {
+        Row: {
+          pair: string | null
+          swap_count: number | null
+          volume0: number | null
+          volume1: number | null
+        }
+        Relationships: []
+      }
+      pair_volume_7d: {
+        Row: {
+          pair: string | null
+          swap_count: number | null
+          volume0: number | null
+          volume1: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
