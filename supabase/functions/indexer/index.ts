@@ -81,18 +81,38 @@ Deno.serve(async (req) => {
 
   try {
     const head = await provider.getBlockNumber();
+
+    // Discover known pairs first (cheap) so we can compute a sane start block
+    const len = Number(await factory.allPairsLength());
+    const pairs: string[] = [];
+    for (let i = 0; i < len; i++) pairs.push((await factory.allPairs(i)).toLowerCase());
+    const knownPairs = new Set(pairs);
+
+    // Earliest known created_block from DB (so cursor never skips history)
+    const { data: earliestRow } = await supabase
+      .from("pairs_state").select("created_block")
+      .eq("chain_id", CHAIN_ID).not("created_block", "is", null)
+      .order("created_block", { ascending: true }).limit(1).maybeSingle();
+    const earliest = Number(earliestRow?.created_block ?? 0);
+
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
-    let from = cur?.last_block ? Number(cur.last_block) + 1 : Math.max(0, head - 5_000);
+    const cursorBlock = Number(cur?.last_block ?? 0);
+    // If we know a factory pair was created earlier than our cursor and we have no events yet, rewind.
+    let from = cursorBlock + 1;
+    if (earliest > 0 && cursorBlock > earliest) {
+      const { count } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
+      if (!count || count === 0) {
+        from = earliest;
+        console.log(`rewinding cursor to earliest pair block ${earliest}`);
+      }
+    } else if (cursorBlock === 0) {
+      from = earliest > 0 ? earliest : Math.max(0, head - 5_000);
+    }
     const to = Math.min(head, from + MAX_BLOCKS_PER_CALL - 1);
     if (from > to) {
       return json({ ok: true, head, from, to, scanned: 0, message: "up to date" });
     }
 
-    // Discover known pairs
-    const len = Number(await factory.allPairsLength());
-    const pairs: string[] = [];
-    for (let i = 0; i < len; i++) pairs.push((await factory.allPairs(i)).toLowerCase());
-    const knownPairs = new Set(pairs);
 
     // Upsert pair metadata (cheap if already exists)
     for (const p of pairs) {
