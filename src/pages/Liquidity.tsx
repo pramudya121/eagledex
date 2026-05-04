@@ -634,6 +634,7 @@ const Liquidity = () => {
               {busy ? <Loader2 className="animate-spin w-4 h-4"/> : lpBal === 0n ? "No LP balance" : `Remove ${removePct}% Liquidity`}
             </Button>
           </div>
+          </div>
         </TabsContent>
 
 
