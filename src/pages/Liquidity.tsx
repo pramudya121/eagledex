@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { usePersistedPref } from "@/lib/userPrefs";
-import FormOrb3D from "@/components/FormOrb3D";
 
 const Liquidity = () => {
   const { account, signer, readProvider, factory, isCorrectChain } = useWeb3();
@@ -337,32 +336,21 @@ const Liquidity = () => {
 
   return (
     <div className="max-w-xl mx-auto animate-slide-up">
-      {/* Decorative 3D orb */}
-      <div className="relative mb-1">
-        <FormOrb3D height={170} />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-background" />
-      </div>
-
-      <div className="text-center mb-6 -mt-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          Earn 0.30% trading fees
-        </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-          Manage <span className="text-grad">Liquidity</span>
+      <div className="text-center mb-6">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-2">
+          <Plus className="w-7 h-7 text-primary"/> Manage <span className="text-grad">Liquidity</span>
         </h1>
-        <p className="text-sm text-muted-foreground mt-1.5">Provide tokens to pools · auto-quoted ratios · share-of-pool preview</p>
+        <p className="text-sm text-muted-foreground mt-1">Earn fees by providing tokens to pools</p>
       </div>
 
       <Tabs defaultValue="add" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full glass rounded-2xl p-1 h-auto mb-1">
-          <TabsTrigger value="add" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2 transition-all"><Plus className="w-4 h-4 mr-1.5"/>Add</TabsTrigger>
-          <TabsTrigger value="remove" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2 transition-all"><Minus className="w-4 h-4 mr-1.5"/>Remove</TabsTrigger>
+        <TabsList className="grid grid-cols-2 w-full glass rounded-2xl p-1 h-auto">
+          <TabsTrigger value="add" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2"><Plus className="w-4 h-4 mr-1.5"/>Add</TabsTrigger>
+          <TabsTrigger value="remove" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2"><Minus className="w-4 h-4 mr-1.5"/>Remove</TabsTrigger>
         </TabsList>
 
         <TabsContent value="add" className="mt-4">
-          <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)] hover:shadow-[0_40px_100px_-30px_hsl(var(--primary)/0.6)] transition-shadow duration-500">
-          <div className="form-surface p-5 space-y-3 rounded-[calc(1.5rem-1.5px)]">
+          <div className="form-surface p-5 space-y-3">
             <Field token={a} setToken={setA} exclude={b.address} amount={aAmt} setAmount={setAAmt} bal={balA} label="TOKEN A" />
             <div className="flex justify-center -my-1.5 relative z-10">
               <div className="w-8 h-8 rounded-xl btn-primary-grad grid place-items-center text-primary-foreground"><Plus className="w-4 h-4"/></div>
@@ -513,12 +501,10 @@ const Liquidity = () => {
               </Button>
             )}
           </div>
-          </div>
         </TabsContent>
 
         <TabsContent value="remove" className="mt-4">
-          <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)] hover:shadow-[0_40px_100px_-30px_hsl(var(--primary)/0.6)] transition-shadow duration-500">
-          <div className="form-surface p-5 space-y-4 rounded-[calc(1.5rem-1.5px)]">
+          <div className="form-surface p-5 space-y-4">
             <div className="form-field p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">YOUR LP TOKENS</span>
@@ -633,7 +619,6 @@ const Liquidity = () => {
               className="w-full h-14 rounded-2xl btn-primary-grad text-primary-foreground font-bold text-base">
               {busy ? <Loader2 className="animate-spin w-4 h-4"/> : lpBal === 0n ? "No LP balance" : `Remove ${removePct}% Liquidity`}
             </Button>
-          </div>
           </div>
         </TabsContent>
 
