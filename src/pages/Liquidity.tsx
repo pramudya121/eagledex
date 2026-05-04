@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { usePersistedPref } from "@/lib/userPrefs";
+import FormOrb3D from "@/components/FormOrb3D";
 
 const Liquidity = () => {
   const { account, signer, readProvider, factory, isCorrectChain } = useWeb3();
