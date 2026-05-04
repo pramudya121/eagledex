@@ -5,6 +5,8 @@ import { explorerTx } from "@/lib/chain";
 import { usePoolIndex, poolTVL, poolVolume } from "@/lib/poolIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PriceChart from "@/components/PriceChart";
+import NumberTicker from "@/components/ui-fx/NumberTicker";
+import GlowingStarsBackgroundCard from "@/components/ui-fx/GlowingStars";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, Legend,
@@ -125,29 +127,33 @@ const Analytics = () => {
 
       {/* Hero metrics */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="glass rounded-2xl p-6 bg-gradient-to-br from-primary/15 to-transparent">
+        <GlowingStarsBackgroundCard density={28} className="bg-gradient-to-br from-primary/15 to-transparent">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Total Value Locked</div>
             <DollarSign className="w-4 h-4 text-primary"/>
           </div>
-          <div className="text-4xl font-extrabold text-grad">{totalTVL.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          <div className="text-4xl font-extrabold text-grad">
+            <NumberTicker value={totalTVL} decimals={2} />
+          </div>
           <div className="text-xs text-muted-foreground mt-2">Sum of all pool reserves</div>
-        </div>
-        <div className="glass rounded-2xl p-6 bg-gradient-to-br from-primary/10 to-transparent">
+        </GlowingStarsBackgroundCard>
+        <GlowingStarsBackgroundCard density={28} className="bg-gradient-to-br from-primary/10 to-transparent">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Trading Volume</div>
             <Zap className="w-4 h-4 text-primary"/>
           </div>
-          <div className="text-4xl font-extrabold">{totalVol.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          <div className="text-4xl font-extrabold">
+            <NumberTicker value={totalVol} decimals={2} />
+          </div>
           <div className="text-xs text-muted-foreground mt-2">~50k recent blocks</div>
-        </div>
+        </GlowingStarsBackgroundCard>
       </div>
 
       {/* Mini stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniStat icon={Layers}     label="Total Pairs"  value={String(pools.length)} />
-        <MiniStat icon={Activity}   label="Total Swaps"  value={String(totalSwaps)} />
-        <MiniStat icon={TrendingUp} label="Avg TVL/pool" value={pools.length ? (totalTVL/pools.length).toLocaleString(undefined,{maximumFractionDigits:2}) : "0"} />
+        <MiniStat icon={Layers}     label="Total Pairs"  value={<NumberTicker value={pools.length} />} />
+        <MiniStat icon={Activity}   label="Total Swaps"  value={<NumberTicker value={totalSwaps} />} />
+        <MiniStat icon={TrendingUp} label="Avg TVL/pool" value={<NumberTicker value={pools.length ? totalTVL/pools.length : 0} decimals={2} />} />
         <MiniStat icon={Zap}        label="Fee tier"     value="0.30%" />
       </div>
 

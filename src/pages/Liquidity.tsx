@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { usePersistedPref } from "@/lib/userPrefs";
+import PremiumHero from "@/components/ui-fx/PremiumHero";
 
 const Liquidity = () => {
   const { account, signer, readProvider, factory, isCorrectChain } = useWeb3();
@@ -336,12 +337,11 @@ const Liquidity = () => {
 
   return (
     <div className="max-w-xl mx-auto animate-slide-up">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-2">
-          <Plus className="w-7 h-7 text-primary"/> Manage <span className="text-grad">Liquidity</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Earn fees by providing tokens to pools</p>
-      </div>
+      <PremiumHero
+        kicker={<><Plus className="w-3.5 h-3.5 text-primary"/> Manage Liquidity</>}
+        title="Earn fees by providing liquidity"
+        subtitle="Add tokens to a pool and receive a share of every swap. Auto-quoted ratios, slippage-guarded, on-chain."
+      />
 
       <Tabs defaultValue="add" className="w-full">
         <TabsList className="grid grid-cols-2 w-full glass rounded-2xl p-1 h-auto">

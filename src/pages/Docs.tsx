@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS } from "@/lib/chain";
+import HoverEffect from "@/components/ui-fx/HoverEffect";
 
 /* ---------- Sidebar config (mirrors the reference layout) ---------- */
 type NavItem = { id: string; label: string; icon: any };
@@ -253,18 +254,20 @@ const Docs = () => {
               </p>
             </div>
 
-            {/* Key features grid (2 cols, like reference) */}
+            {/* Key features — Aceternity HoverEffect */}
             <h2 className="flex items-center gap-2 font-extrabold text-xl md:text-2xl mt-8 mb-4">
               <Sparkles className="w-5 h-5 text-primary" /> Key Features
             </h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <FeatureCard icon={ArrowLeftRight} title="Token Swap"      desc="Instantly trade tokens with AMM pricing." accent="primary" />
-              <FeatureCard icon={Droplets}       title="Liquidity Pools" desc="Provide liquidity and earn 0.30% fees." accent="blue" />
-              <FeatureCard icon={BarChart3}      title="Analytics"       desc="Real-time charts, TVL, volume, pair data." accent="purple" />
-              <FeatureCard icon={Briefcase}      title="Portfolio"       desc="Track holdings, LP positions, send tokens." accent="orange" />
-              <FeatureCard icon={Coins}          title="EGDX Token"      desc="Native governance & utility token (EGDX)." accent="primary" />
-              <FeatureCard icon={History}        title="History"         desc="Complete transaction history with details." accent="green" />
-            </div>
+            <HoverEffect
+              items={[
+                { title: "Token Swap",      description: "Instantly trade tokens with AMM pricing.",       icon: <ArrowLeftRight className="w-5 h-5"/> },
+                { title: "Liquidity Pools", description: "Provide liquidity and earn 0.30% fees.",         icon: <Droplets className="w-5 h-5"/> },
+                { title: "Analytics",       description: "Real-time charts, TVL, volume, pair data.",     icon: <BarChart3 className="w-5 h-5"/> },
+                { title: "Portfolio",       description: "Track holdings, LP positions, send tokens.",    icon: <Briefcase className="w-5 h-5"/> },
+                { title: "EGDX Token",      description: "Native governance & utility token (EGDX).",     icon: <Coins className="w-5 h-5"/> },
+                { title: "History",         description: "Complete transaction history with details.",    icon: <History className="w-5 h-5"/> },
+              ]}
+            />
           </section>
 
           {/* Connect wallet */}
