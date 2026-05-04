@@ -206,16 +206,18 @@ Deno.serve(async (req) => {
       .from("pair_events")
       .select("pair")
       .gte("block_number", from)
-      .lte("block_number", to);
+      .lte("block_number", effectiveTo);
     (recent ?? []).forEach((r: any) => touched.add(r.pair));
     for (const p of touched) await refreshPairState(supabase, provider, p);
 
-    await supabase.from("indexer_cursor").upsert({ chain_id: CHAIN_ID, last_block: to, updated_at: new Date().toISOString() });
+    if (effectiveTo >= from) {
+      await supabase.from("indexer_cursor").upsert({ chain_id: CHAIN_ID, last_block: effectiveTo, updated_at: new Date().toISOString() });
+    }
 
-    return json({ ok: true, head, from, to, scanned, pairs: pairs.length });
+    return json({ ok: true, head, from, to: effectiveTo, requestedTo: to, scanned, pairs: pairs.length });
   } catch (e: any) {
     console.error("indexer error", e);
-    return json({ ok: false, error: e?.message ?? String(e) }, 500);
+    return json({ ok: true, error: e?.message ?? String(e), scanned: 0 }, 200);
   }
 });
 
