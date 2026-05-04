@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { formatUnits } from "ethers";
-import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3, Droplets, Sparkles } from "lucide-react";
+import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3, Droplets, Sparkles, Cloud } from "lucide-react";
 import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolVolumeWindow, poolIndex, IndexedPool } from "@/lib/poolIndex";
+import { useCloudIndex, cloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PoolChartDialog from "@/components/PoolChartDialog";
 
@@ -12,8 +13,13 @@ type SortKey = "tvl" | "vol" | "swaps";
 
 const Pools = () => {
   const state = usePoolIndex();
+  const cloud = useCloudIndex();
+  const [params] = useSearchParams();
+  const highlight = params.get("highlight")?.toLowerCase();
   const [q, setQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("tvl");
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { if (highlight && highlightRef.current) highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" }); }, [highlight, state.lastUpdated]);
 
   const allPools = useMemo(() => Object.values(state.pools), [state.pools, state.lastUpdated]);
   // Only show pools whose BOTH tokens are in the registry (hides removed/legacy pairs like WIRL/MON).
@@ -86,7 +92,20 @@ const Pools = () => {
           <SyncBadge />
           {state.lastUpdated && <span className="hidden sm:inline">{new Date(state.lastUpdated).toLocaleTimeString()}</span>}
         </div>
-        <button onClick={() => poolIndex.refresh()} className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground border-l border-border/60 pl-2">
+          <SyncBadge />
+          <span title={`Cloud last block ${cloud.lastBlock} · ${cloud.scannedLastCall} events last sync`}
+            className={`flex items-center gap-1 px-2 py-1 rounded-full border ${
+              cloud.status === "ok" ? "border-green-500/40 text-green-400 bg-green-500/10"
+              : cloud.status === "syncing" ? "border-primary/40 text-primary bg-primary/10"
+              : cloud.status === "error" ? "border-destructive/40 text-destructive bg-destructive/10"
+              : "border-border"
+            }`}>
+            <Cloud className="w-3 h-3"/>{cloud.status === "syncing" ? "Sync…" : cloud.status === "ok" ? "Cloud" : cloud.status === "error" ? "Err" : "Idle"}
+          </span>
+          {state.lastUpdated && <span className="hidden sm:inline">{new Date(state.lastUpdated).toLocaleTimeString()}</span>}
+        </div>
+        <button onClick={() => { poolIndex.refresh(); cloudIndex.ping(); }} className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
           <RefreshCw className="w-3.5 h-3.5"/> Refresh
         </button>
         <Link to="/create-pool" className="px-4 py-2 rounded-lg btn-primary-grad text-primary-foreground font-bold text-xs flex items-center gap-1.5">
