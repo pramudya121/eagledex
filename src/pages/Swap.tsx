@@ -16,6 +16,7 @@ import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
 import { usePersistedPref } from "@/lib/userPrefs";
+import FormOrb3D from "@/components/FormOrb3D";
 
 const Swap = () => {
   const { account, signer, readProvider, router, isCorrectChain } = useWeb3();
@@ -230,7 +231,13 @@ const Swap = () => {
 
   return (
     <div className="max-w-md mx-auto animate-slide-up">
-      <div className="text-center mb-6">
+      {/* Decorative 3D orb above the form */}
+      <div className="relative mb-1">
+        <FormOrb3D height={170} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-background" />
+      </div>
+
+      <div className="text-center mb-6 -mt-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-3">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Best on-chain rate
@@ -242,7 +249,7 @@ const Swap = () => {
       </div>
 
       {/* Premium gradient ring around the swap surface */}
-      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)]">
+      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)] hover:shadow-[0_40px_100px_-30px_hsl(var(--primary)/0.6)] transition-shadow duration-500">
         <div className="form-surface p-5 relative rounded-[calc(1.5rem-1.5px)]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
