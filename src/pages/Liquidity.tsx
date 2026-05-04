@@ -361,7 +361,8 @@ const Liquidity = () => {
         </TabsList>
 
         <TabsContent value="add" className="mt-4">
-          <div className="form-surface p-5 space-y-3">
+          <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)] hover:shadow-[0_40px_100px_-30px_hsl(var(--primary)/0.6)] transition-shadow duration-500">
+          <div className="form-surface p-5 space-y-3 rounded-[calc(1.5rem-1.5px)]">
             <Field token={a} setToken={setA} exclude={b.address} amount={aAmt} setAmount={setAAmt} bal={balA} label="TOKEN A" />
             <div className="flex justify-center -my-1.5 relative z-10">
               <div className="w-8 h-8 rounded-xl btn-primary-grad grid place-items-center text-primary-foreground"><Plus className="w-4 h-4"/></div>
