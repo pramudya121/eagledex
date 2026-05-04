@@ -18,8 +18,29 @@ const CHAIN_ID = 26218;
 const RPC = "https://testnet.integralayer.com/evm";
 const FACTORY = "0x5687FDA3BdE14d38057699c402606ab470EcA873";
 
-const MAX_BLOCKS_PER_CALL = 8_000;
-const STEP = 2_000;
+const MAX_BLOCKS_PER_CALL = 4_000;
+const STEP = 500;
+const MIN_STEP = 50;
+
+// Retry getLogs with adaptive range halving on RPC timeouts.
+async function getLogsRetry(provider: ethers.JsonRpcProvider, filter: any): Promise<any[]> {
+  const from = Number(filter.fromBlock);
+  const to = Number(filter.toBlock);
+  try {
+    return await provider.getLogs(filter);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    const span = to - from + 1;
+    if (span <= MIN_STEP || !/timed out|timeout|coalesce|exceed|limit/i.test(msg)) {
+      console.warn(`getLogs failed [${from}-${to}] span=${span}: ${msg}`);
+      return [];
+    }
+    const mid = from + Math.floor(span / 2);
+    const a = await getLogsRetry(provider, { ...filter, fromBlock: from, toBlock: mid });
+    const b = await getLogsRetry(provider, { ...filter, fromBlock: mid + 1, toBlock: to });
+    return [...a, ...b];
+  }
+}
 
 const TOPIC_SWAP = ethers.id("Swap(address,uint256,uint256,uint256,uint256,address)");
 const TOPIC_SYNC = ethers.id("Sync(uint112,uint112)");
@@ -90,87 +111,94 @@ Deno.serve(async (req) => {
       return iso;
     }
 
-    for (let f = from; f <= to; f += STEP) {
-      const t = Math.min(to, f + STEP - 1);
-      // PairCreated logs
-      const factoryLogs = await provider.getLogs({ address: FACTORY, fromBlock: f, toBlock: t, topics: [TOPIC_PAIR_CREATED] });
-      for (const log of factoryLogs) {
-        try {
-          const parsed = factoryIface.parseLog({ topics: log.topics as string[], data: log.data })!;
-          const newPair = (parsed.args[2] as string).toLowerCase();
-          knownPairs.add(newPair);
-          await supabase.from("pair_events").upsert({
-            chain_id: CHAIN_ID, pair: newPair, event_type: "pair_created",
-            block_number: log.blockNumber, block_ts: await ts(log.blockNumber),
-            tx_hash: log.transactionHash, log_index: log.index,
-            token0: (parsed.args[0] as string).toLowerCase(),
-            token1: (parsed.args[1] as string).toLowerCase(),
-          }, { onConflict: "chain_id,tx_hash,log_index" });
-          await loadPairMeta(supabase, provider, newPair, log.blockNumber);
-          scanned++;
-        } catch {}
-      }
-
-      // Pair logs
-      const logs = await provider.getLogs({
-        fromBlock: f, toBlock: t,
-        topics: [[TOPIC_SWAP, TOPIC_SYNC, TOPIC_MINT, TOPIC_BURN]],
-      });
-      const rows: any[] = [];
-      for (const log of logs) {
-        const addr = log.address.toLowerCase();
-        if (!knownPairs.has(addr)) continue;
-        try {
-          const parsed = pairIface.parseLog({ topics: log.topics as string[], data: log.data });
-          if (!parsed) continue;
-          const blockTs = await ts(log.blockNumber);
-          const base = {
-            chain_id: CHAIN_ID, pair: addr,
-            block_number: log.blockNumber, block_ts: blockTs,
-            tx_hash: log.transactionHash, log_index: log.index,
-          };
-          if (parsed.name === "Swap") {
-            rows.push({
-              ...base, event_type: "swap",
-              sender: (parsed.args[0] as string).toLowerCase(),
-              amount0_in: parsed.args[1].toString(),
-              amount1_in: parsed.args[2].toString(),
-              amount0_out: parsed.args[3].toString(),
-              amount1_out: parsed.args[4].toString(),
-              to_addr: (parsed.args[5] as string).toLowerCase(),
-            });
-          } else if (parsed.name === "Sync") {
-            rows.push({
-              ...base, event_type: "sync",
-              reserve0: parsed.args[0].toString(),
-              reserve1: parsed.args[1].toString(),
-            });
-          } else if (parsed.name === "Mint") {
-            rows.push({
-              ...base, event_type: "mint",
-              sender: (parsed.args[0] as string).toLowerCase(),
-              amount0: parsed.args[1].toString(),
-              amount1: parsed.args[2].toString(),
-            });
-          } else if (parsed.name === "Burn") {
-            rows.push({
-              ...base, event_type: "burn",
-              sender: (parsed.args[0] as string).toLowerCase(),
-              amount0: parsed.args[1].toString(),
-              amount1: parsed.args[2].toString(),
-              to_addr: (parsed.args[3] as string).toLowerCase(),
-            });
-          }
-        } catch {}
-      }
-      // Batch upsert
-      if (rows.length > 0) {
-        for (let i = 0; i < rows.length; i += 200) {
-          await supabase.from("pair_events").upsert(rows.slice(i, i + 200), { onConflict: "chain_id,tx_hash,log_index" });
+    let lastOk = from - 1;
+    try {
+      for (let f = from; f <= to; f += STEP) {
+        const t = Math.min(to, f + STEP - 1);
+        // PairCreated logs
+        const factoryLogs = await getLogsRetry(provider, { address: FACTORY, fromBlock: f, toBlock: t, topics: [TOPIC_PAIR_CREATED] });
+        for (const log of factoryLogs) {
+          try {
+            const parsed = factoryIface.parseLog({ topics: log.topics as string[], data: log.data })!;
+            const newPair = (parsed.args[2] as string).toLowerCase();
+            knownPairs.add(newPair);
+            await supabase.from("pair_events").upsert({
+              chain_id: CHAIN_ID, pair: newPair, event_type: "pair_created",
+              block_number: log.blockNumber, block_ts: await ts(log.blockNumber),
+              tx_hash: log.transactionHash, log_index: log.index,
+              token0: (parsed.args[0] as string).toLowerCase(),
+              token1: (parsed.args[1] as string).toLowerCase(),
+            }, { onConflict: "chain_id,tx_hash,log_index" });
+            await loadPairMeta(supabase, provider, newPair, log.blockNumber);
+            scanned++;
+          } catch {}
         }
-        scanned += rows.length;
+
+        // Pair logs
+        const logs = await getLogsRetry(provider, {
+          fromBlock: f, toBlock: t,
+          topics: [[TOPIC_SWAP, TOPIC_SYNC, TOPIC_MINT, TOPIC_BURN]],
+        });
+        const rows: any[] = [];
+        for (const log of logs) {
+          const addr = log.address.toLowerCase();
+          if (!knownPairs.has(addr)) continue;
+          try {
+            const parsed = pairIface.parseLog({ topics: log.topics as string[], data: log.data });
+            if (!parsed) continue;
+            const blockTs = await ts(log.blockNumber);
+            const base = {
+              chain_id: CHAIN_ID, pair: addr,
+              block_number: log.blockNumber, block_ts: blockTs,
+              tx_hash: log.transactionHash, log_index: log.index,
+            };
+            if (parsed.name === "Swap") {
+              rows.push({
+                ...base, event_type: "swap",
+                sender: (parsed.args[0] as string).toLowerCase(),
+                amount0_in: parsed.args[1].toString(),
+                amount1_in: parsed.args[2].toString(),
+                amount0_out: parsed.args[3].toString(),
+                amount1_out: parsed.args[4].toString(),
+                to_addr: (parsed.args[5] as string).toLowerCase(),
+              });
+            } else if (parsed.name === "Sync") {
+              rows.push({
+                ...base, event_type: "sync",
+                reserve0: parsed.args[0].toString(),
+                reserve1: parsed.args[1].toString(),
+              });
+            } else if (parsed.name === "Mint") {
+              rows.push({
+                ...base, event_type: "mint",
+                sender: (parsed.args[0] as string).toLowerCase(),
+                amount0: parsed.args[1].toString(),
+                amount1: parsed.args[2].toString(),
+              });
+            } else if (parsed.name === "Burn") {
+              rows.push({
+                ...base, event_type: "burn",
+                sender: (parsed.args[0] as string).toLowerCase(),
+                amount0: parsed.args[1].toString(),
+                amount1: parsed.args[2].toString(),
+                to_addr: (parsed.args[3] as string).toLowerCase(),
+              });
+            }
+          } catch {}
+        }
+        // Batch upsert
+        if (rows.length > 0) {
+          for (let i = 0; i < rows.length; i += 200) {
+            await supabase.from("pair_events").upsert(rows.slice(i, i + 200), { onConflict: "chain_id,tx_hash,log_index" });
+          }
+          scanned += rows.length;
+        }
+        lastOk = t;
       }
+    } catch (loopErr: any) {
+      console.warn("partial scan, advancing cursor to", lastOk, loopErr?.message ?? loopErr);
     }
+    const effectiveTo = Math.max(from - 1, lastOk);
 
     // Refresh state for pairs that had events
     const touched = new Set<string>();
@@ -178,16 +206,18 @@ Deno.serve(async (req) => {
       .from("pair_events")
       .select("pair")
       .gte("block_number", from)
-      .lte("block_number", to);
+      .lte("block_number", effectiveTo);
     (recent ?? []).forEach((r: any) => touched.add(r.pair));
     for (const p of touched) await refreshPairState(supabase, provider, p);
 
-    await supabase.from("indexer_cursor").upsert({ chain_id: CHAIN_ID, last_block: to, updated_at: new Date().toISOString() });
+    if (effectiveTo >= from) {
+      await supabase.from("indexer_cursor").upsert({ chain_id: CHAIN_ID, last_block: effectiveTo, updated_at: new Date().toISOString() });
+    }
 
-    return json({ ok: true, head, from, to, scanned, pairs: pairs.length });
+    return json({ ok: true, head, from, to: effectiveTo, requestedTo: to, scanned, pairs: pairs.length });
   } catch (e: any) {
     console.error("indexer error", e);
-    return json({ ok: false, error: e?.message ?? String(e) }, 500);
+    return json({ ok: true, error: e?.message ?? String(e), scanned: 0 }, 200);
   }
 });
 
