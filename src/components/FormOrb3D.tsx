@@ -27,18 +27,18 @@ const FormOrb3D = ({
     const resolveColor = () => {
       if (hue !== "primary") return new THREE.Color(hue);
       const css = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
-      // --primary is HSL space-separated (e.g. "0 84% 60%") → build hsl() string for THREE
+      // --primary is HSL space-separated (e.g. "0 84% 60%")
       if (css) {
-        try { return new THREE.Color(`hsl(${css.replaceAll(" ", ", ").replace(/,(?=[^,]*$)/, "%,").replace(/,([^,]+)$/, ", $1%")})`); } catch {}
-        // simpler robust path: parse "h s% l%"
         const parts = css.split(/\s+/);
         if (parts.length === 3) {
           const hh = parseFloat(parts[0]);
           const ss = parseFloat(parts[1]);
           const ll = parseFloat(parts[2]);
-          const c = new THREE.Color();
-          c.setHSL(hh / 360, ss / 100, ll / 100);
-          return c;
+          if (isFinite(hh) && isFinite(ss) && isFinite(ll)) {
+            const c = new THREE.Color();
+            c.setHSL(hh / 360, ss / 100, ll / 100);
+            return c;
+          }
         }
       }
       return new THREE.Color("#ff3355");
