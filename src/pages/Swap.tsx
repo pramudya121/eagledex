@@ -16,6 +16,7 @@ import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
 import { usePersistedPref } from "@/lib/userPrefs";
+import MovingBorder from "@/components/ui-fx/MovingBorder";
 
 const Swap = () => {
   const { account, signer, readProvider, router, isCorrectChain } = useWeb3();
@@ -477,7 +478,7 @@ const Swap = () => {
             : <><Zap className="w-4 h-4 mr-2" /> Swap</>}
         </Button>
       </div>
-      </div>
+      </MovingBorder>
     </div>
   );
 };
