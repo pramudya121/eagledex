@@ -18,8 +18,29 @@ const CHAIN_ID = 26218;
 const RPC = "https://testnet.integralayer.com/evm";
 const FACTORY = "0x5687FDA3BdE14d38057699c402606ab470EcA873";
 
-const MAX_BLOCKS_PER_CALL = 8_000;
-const STEP = 2_000;
+const MAX_BLOCKS_PER_CALL = 4_000;
+const STEP = 500;
+const MIN_STEP = 50;
+
+// Retry getLogs with adaptive range halving on RPC timeouts.
+async function getLogsRetry(provider: ethers.JsonRpcProvider, filter: any): Promise<any[]> {
+  const from = Number(filter.fromBlock);
+  const to = Number(filter.toBlock);
+  try {
+    return await provider.getLogs(filter);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    const span = to - from + 1;
+    if (span <= MIN_STEP || !/timed out|timeout|coalesce|exceed|limit/i.test(msg)) {
+      console.warn(`getLogs failed [${from}-${to}] span=${span}: ${msg}`);
+      return [];
+    }
+    const mid = from + Math.floor(span / 2);
+    const a = await getLogsRetry(provider, { ...filter, fromBlock: from, toBlock: mid });
+    const b = await getLogsRetry(provider, { ...filter, fromBlock: mid + 1, toBlock: to });
+    return [...a, ...b];
+  }
+}
 
 const TOPIC_SWAP = ethers.id("Swap(address,uint256,uint256,uint256,uint256,address)");
 const TOPIC_SYNC = ethers.id("Sync(uint112,uint112)");
