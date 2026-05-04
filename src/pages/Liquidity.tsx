@@ -337,17 +337,27 @@ const Liquidity = () => {
 
   return (
     <div className="max-w-xl mx-auto animate-slide-up">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-2">
-          <Plus className="w-7 h-7 text-primary"/> Manage <span className="text-grad">Liquidity</span>
+      {/* Decorative 3D orb */}
+      <div className="relative mb-1">
+        <FormOrb3D height={170} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-background" />
+      </div>
+
+      <div className="text-center mb-6 -mt-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          Earn 0.30% trading fees
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+          Manage <span className="text-grad">Liquidity</span>
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Earn fees by providing tokens to pools</p>
+        <p className="text-sm text-muted-foreground mt-1.5">Provide tokens to pools · auto-quoted ratios · share-of-pool preview</p>
       </div>
 
       <Tabs defaultValue="add" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full glass rounded-2xl p-1 h-auto">
-          <TabsTrigger value="add" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2"><Plus className="w-4 h-4 mr-1.5"/>Add</TabsTrigger>
-          <TabsTrigger value="remove" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2"><Minus className="w-4 h-4 mr-1.5"/>Remove</TabsTrigger>
+        <TabsList className="grid grid-cols-2 w-full glass rounded-2xl p-1 h-auto mb-1">
+          <TabsTrigger value="add" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2 transition-all"><Plus className="w-4 h-4 mr-1.5"/>Add</TabsTrigger>
+          <TabsTrigger value="remove" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2 transition-all"><Minus className="w-4 h-4 mr-1.5"/>Remove</TabsTrigger>
         </TabsList>
 
         <TabsContent value="add" className="mt-4">
