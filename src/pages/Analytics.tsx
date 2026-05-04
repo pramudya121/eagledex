@@ -148,18 +148,25 @@ const Analytics = () => {
         </div>
         <div className="glass rounded-2xl p-6 bg-gradient-to-br from-primary/10 to-transparent">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Trading Volume</div>
-            <Zap className="w-4 h-4 text-primary"/>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Trading Volume {usingCloud ? "(24h)" : "(recent)"}</div>
+            <div className="flex items-center gap-2">
+              {usingCloud && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-bold">
+                  <Cloud className="w-3 h-3"/> CLOUD
+                </span>
+              )}
+              <Zap className="w-4 h-4 text-primary"/>
+            </div>
           </div>
           <div className="text-4xl font-extrabold">{totalVol.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
-          <div className="text-xs text-muted-foreground mt-2">~50k recent blocks</div>
+          <div className="text-xs text-muted-foreground mt-2">{usingCloud ? "Cross-user, last 24 hours" : "~50k recent blocks (local cache)"}</div>
         </div>
       </div>
 
       {/* Mini stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MiniStat icon={Layers}     label="Total Pairs"  value={String(pools.length)} />
-        <MiniStat icon={Activity}   label="Total Swaps"  value={String(totalSwaps)} />
+        <MiniStat icon={Activity}   label={usingCloud ? "Swaps (24h)" : "Total Swaps"}  value={String(totalSwaps)} />
         <MiniStat icon={TrendingUp} label="Avg TVL/pool" value={pools.length ? (totalTVL/pools.length).toLocaleString(undefined,{maximumFractionDigits:2}) : "0"} />
         <MiniStat icon={Zap}        label="Fee tier"     value="0.30%" />
       </div>
