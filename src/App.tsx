@@ -17,6 +17,7 @@ import Farming from "./pages/Farming";
 import Admin from "./pages/Admin";
 import Faucet from "./pages/Faucet";
 import AdminFaucet from "./pages/AdminFaucet";
+import CreatePool from "./pages/CreatePool";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
                 <Route path="/" element={<Home />} />
                 <Route path="/swap" element={<Swap />} />
                 <Route path="/liquidity" element={<Liquidity />} />
+                <Route path="/create-pool" element={<CreatePool />} />
                 <Route path="/pools" element={<Pools />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/portfolio" element={<Portfolio />} />

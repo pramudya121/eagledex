@@ -89,7 +89,7 @@ const Pools = () => {
         <button onClick={() => poolIndex.refresh()} className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
           <RefreshCw className="w-3.5 h-3.5"/> Refresh
         </button>
-        <Link to="/liquidity" className="px-4 py-2 rounded-lg btn-primary-grad text-primary-foreground font-bold text-xs flex items-center gap-1.5">
+        <Link to="/create-pool" className="px-4 py-2 rounded-lg btn-primary-grad text-primary-foreground font-bold text-xs flex items-center gap-1.5">
           <Plus className="w-3.5 h-3.5"/> Create Pool
         </Link>
       </div>
