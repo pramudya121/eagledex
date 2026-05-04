@@ -18,6 +18,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
 } from "recharts";
+import BorderBeam from "@/components/ui-fx/BorderBeam";
 
 interface LPPosition {
   pair: string;
@@ -416,7 +417,8 @@ const Portfolio = () => {
 };
 
 const StatCard = ({ icon: Icon, label, value, sub }: any) => (
-  <div className="glass rounded-2xl p-4 bg-gradient-to-br from-primary/10 to-transparent">
+  <div className="relative glass rounded-2xl p-4 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
+    <BorderBeam size={180} duration={8} />
     <div className="flex items-center justify-between mb-2">
       <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <Icon className="w-4 h-4 text-primary"/>
