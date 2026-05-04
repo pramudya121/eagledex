@@ -11,6 +11,7 @@ import { ERC20_ABI, ROUTER_ABI } from "@/lib/abis";
 import { deadlineMin, getTokenBalance, isNative, parse, wrap } from "@/lib/dex";
 import { sendTx } from "@/lib/tx";
 import { poolIndex } from "@/lib/poolIndex";
+import { cloudIndex } from "@/lib/cloudIndex";
 
 type Step = 1 | 2 | 3;
 
