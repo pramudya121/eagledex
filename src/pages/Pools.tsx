@@ -145,7 +145,14 @@ const Pools = () => {
         )
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pools.map(p => <PoolCard key={p.pair} p={p} />)}
+          {pools.map(p => {
+            const isHi = highlight && p.pair.toLowerCase() === highlight;
+            return (
+              <div key={p.pair} ref={isHi ? highlightRef : undefined} className={isHi ? "ring-2 ring-primary rounded-2xl shadow-[0_0_30px_-5px_hsl(var(--primary)/0.6)]" : ""}>
+                <PoolCard p={p} cloudVol24={cloud.volume24h[p.pair.toLowerCase()]} cloudVol7={cloud.volume7d[p.pair.toLowerCase()]} />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
