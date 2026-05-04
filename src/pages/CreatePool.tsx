@@ -11,6 +11,7 @@ import { ERC20_ABI, ROUTER_ABI } from "@/lib/abis";
 import { deadlineMin, getTokenBalance, isNative, parse, wrap } from "@/lib/dex";
 import { sendTx } from "@/lib/tx";
 import { poolIndex } from "@/lib/poolIndex";
+import { cloudIndex } from "@/lib/cloudIndex";
 
 type Step = 1 | 2 | 3;
 
@@ -127,8 +128,15 @@ const CreatePool = () => {
       setCreatedPair(fresh);
       if (fresh !== ZeroAddress) poolIndex.refreshPair(fresh);
       poolIndex.refresh();
-      toast.success("Pool created!", { description: `${a.symbol}/${b.symbol} is now live.` });
+      // Trigger Cloud indexer so other users see this pair immediately.
+      cloudIndex.ping().catch(() => {});
+      toast.success("Pool created!", { description: `${a.symbol}/${b.symbol} is live. Redirecting…` });
       setStep(3);
+      // Auto-redirect to the new pool on the Pools page after a short pause.
+      setTimeout(() => {
+        if (fresh && fresh !== ZeroAddress) navigate(`/pools?highlight=${fresh.toLowerCase()}`);
+        else navigate("/pools");
+      }, 1800);
     } catch {} finally { setBusy(false); }
   };
 

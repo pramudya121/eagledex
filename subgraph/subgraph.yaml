@@ -1,0 +1,54 @@
+specVersion: 0.0.5
+description: EAGLEDEX subgraph for Integralayer testnet — indexes Swap, Mint, Burn, Sync and PairCreated events.
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Factory
+    network: integralayer-testnet
+    source:
+      address: "0x5687FDA3BdE14d38057699c402606ab470EcA873"
+      abi: Factory
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./mappings/factory.ts
+      entities: [Pair, Token, Bundle]
+      abis:
+        - name: Factory
+          file: ./abis/Factory.json
+        - name: Pair
+          file: ./abis/Pair.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: PairCreated(indexed address,indexed address,address,uint256)
+          handler: handlePairCreated
+templates:
+  - kind: ethereum/contract
+    name: Pair
+    network: integralayer-testnet
+    source:
+      abi: Pair
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./mappings/pair.ts
+      entities: [Pair, Swap, Mint, Burn, Sync]
+      abis:
+        - name: Pair
+          file: ./abis/Pair.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
+          handler: handleSwap
+        - event: Mint(indexed address,uint256,uint256)
+          handler: handleMint
+        - event: Burn(indexed address,uint256,uint256,indexed address)
+          handler: handleBurn
+        - event: Sync(uint112,uint112)
+          handler: handleSync

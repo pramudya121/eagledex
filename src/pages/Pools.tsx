@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { formatUnits } from "ethers";
-import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3, Droplets, Sparkles } from "lucide-react";
+import { Loader2, ExternalLink, Layers, TrendingUp, Activity, Search, RefreshCw, Plus, DollarSign, BarChart3, Droplets, Sparkles, Cloud } from "lucide-react";
 import { explorerAddr, TOKENS } from "@/lib/chain";
 import { Input } from "@/components/ui/input";
 import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolVolumeWindow, poolIndex, IndexedPool } from "@/lib/poolIndex";
+import { useCloudIndex, cloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PoolChartDialog from "@/components/PoolChartDialog";
 
@@ -12,8 +13,13 @@ type SortKey = "tvl" | "vol" | "swaps";
 
 const Pools = () => {
   const state = usePoolIndex();
+  const cloud = useCloudIndex();
+  const [params] = useSearchParams();
+  const highlight = params.get("highlight")?.toLowerCase();
   const [q, setQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("tvl");
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { if (highlight && highlightRef.current) highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" }); }, [highlight, state.lastUpdated]);
 
   const allPools = useMemo(() => Object.values(state.pools), [state.pools, state.lastUpdated]);
   // Only show pools whose BOTH tokens are in the registry (hides removed/legacy pairs like WIRL/MON).
@@ -86,7 +92,20 @@ const Pools = () => {
           <SyncBadge />
           {state.lastUpdated && <span className="hidden sm:inline">{new Date(state.lastUpdated).toLocaleTimeString()}</span>}
         </div>
-        <button onClick={() => poolIndex.refresh()} className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground border-l border-border/60 pl-2">
+          <SyncBadge />
+          <span title={`Cloud last block ${cloud.lastBlock} · ${cloud.scannedLastCall} events last sync`}
+            className={`flex items-center gap-1 px-2 py-1 rounded-full border ${
+              cloud.status === "ok" ? "border-green-500/40 text-green-400 bg-green-500/10"
+              : cloud.status === "syncing" ? "border-primary/40 text-primary bg-primary/10"
+              : cloud.status === "error" ? "border-destructive/40 text-destructive bg-destructive/10"
+              : "border-border"
+            }`}>
+            <Cloud className="w-3 h-3"/>{cloud.status === "syncing" ? "Sync…" : cloud.status === "ok" ? "Cloud" : cloud.status === "error" ? "Err" : "Idle"}
+          </span>
+          {state.lastUpdated && <span className="hidden sm:inline">{new Date(state.lastUpdated).toLocaleTimeString()}</span>}
+        </div>
+        <button onClick={() => { poolIndex.refresh(); cloudIndex.ping(); }} className="px-3 py-2 rounded-lg bg-card border border-border hover:border-primary text-xs font-semibold flex items-center gap-1.5">
           <RefreshCw className="w-3.5 h-3.5"/> Refresh
         </button>
         <Link to="/create-pool" className="px-4 py-2 rounded-lg btn-primary-grad text-primary-foreground font-bold text-xs flex items-center gap-1.5">
@@ -126,7 +145,14 @@ const Pools = () => {
         )
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pools.map(p => <PoolCard key={p.pair} p={p} />)}
+          {pools.map(p => {
+            const isHi = highlight && p.pair.toLowerCase() === highlight;
+            return (
+              <div key={p.pair} ref={isHi ? highlightRef : undefined} className={isHi ? "ring-2 ring-primary rounded-2xl shadow-[0_0_30px_-5px_hsl(var(--primary)/0.6)]" : ""}>
+                <PoolCard p={p} cloudVol24={cloud.volume24h[p.pair.toLowerCase()]} cloudVol7={cloud.volume7d[p.pair.toLowerCase()]} />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -161,11 +187,19 @@ const BigStat = ({ label, value, sub, highlight, success }: any) => (
   </div>
 );
 
-const PoolCard = ({ p }: { p: IndexedPool }) => {
+const PoolCard = ({ p, cloudVol24, cloudVol7 }: { p: IndexedPool; cloudVol24?: { volume0: number; volume1: number; swap_count: number }; cloudVol7?: { volume0: number; volume1: number; swap_count: number } }) => {
   const tvl = poolTVL(p);
   const price = poolPrice(p);
   const vol = poolVolume(p);
-  const vol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
+  const localVol24 = poolVolumeWindow(p.pair, 24 * 60 * 60 * 1000);
+  // Prefer Cloud-aggregated volume (cross-user, cross-device); fallback to local cache.
+  const vol24 = cloudVol24
+    ? Number(formatUnits(BigInt(Math.floor(cloudVol24.volume0)), p.decimals0)) + Number(formatUnits(BigInt(Math.floor(cloudVol24.volume1)), p.decimals1))
+    : localVol24;
+  const vol7 = cloudVol7
+    ? Number(formatUnits(BigInt(Math.floor(cloudVol7.volume0)), p.decimals0)) + Number(formatUnits(BigInt(Math.floor(cloudVol7.volume1)), p.decimals1))
+    : 0;
+  const cloudSwaps = cloudVol24?.swap_count ?? 0;
   const [chartOpen, setChartOpen] = useState(false);
   return (
     <div className="glass rounded-2xl p-5 hover:border-primary/60 transition-all hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-transparent">
@@ -175,6 +209,7 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
           {p.logo1 ? <img src={p.logo1} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol1[0]}</div>}
         </div>
         <div className="font-bold text-lg">{p.symbol0}<span className="text-muted-foreground mx-1">/</span>{p.symbol1}</div>
+        {cloudVol24 && <span title="Volume 24h sourced from Cloud-indexed events" className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 border border-green-500/30 font-bold">CLOUD</span>}
         <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="ml-auto text-muted-foreground hover:text-primary">
           <ExternalLink className="w-4 h-4" />
         </a>
@@ -186,8 +221,8 @@ const PoolCard = ({ p }: { p: IndexedPool }) => {
           <div className="font-bold text-grad text-sm font-mono">{tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
         </div>
         <div className="rounded-xl bg-secondary/40 p-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Vol 24h</div>
-          <div className="font-bold text-sm font-mono">{vol24.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Vol 24h {cloudVol7 && <span className="ml-auto text-muted-foreground/70">7d {vol7.toLocaleString(undefined,{maximumFractionDigits:0})}</span>}</div>
+          <div className="font-bold text-sm font-mono">{vol24.toLocaleString(undefined,{maximumFractionDigits:2})}{cloudSwaps > 0 && <span className="text-[10px] text-muted-foreground ml-1">· {cloudSwaps} swaps</span>}</div>
         </div>
       </div>
 

@@ -1,0 +1,67 @@
+type Token @entity {
+  id: ID!
+  symbol: String!
+  name: String!
+  decimals: BigInt!
+  totalSupply: BigInt!
+}
+
+type Pair @entity {
+  id: ID! # pair address
+  token0: Token!
+  token1: Token!
+  reserve0: BigDecimal!
+  reserve1: BigDecimal!
+  totalSupply: BigDecimal!
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  swapCount: BigInt!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+}
+
+type Swap @entity(immutable: true) {
+  id: ID! # tx hash + log index
+  pair: Pair!
+  sender: Bytes!
+  to: Bytes!
+  amount0In: BigDecimal!
+  amount1In: BigDecimal!
+  amount0Out: BigDecimal!
+  amount1Out: BigDecimal!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Mint @entity(immutable: true) {
+  id: ID!
+  pair: Pair!
+  sender: Bytes!
+  amount0: BigDecimal!
+  amount1: BigDecimal!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Burn @entity(immutable: true) {
+  id: ID!
+  pair: Pair!
+  sender: Bytes!
+  to: Bytes!
+  amount0: BigDecimal!
+  amount1: BigDecimal!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type DayData @entity {
+  id: ID! # pair-yyyymmdd
+  pair: Pair!
+  date: Int!
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  swapCount: BigInt!
+}
