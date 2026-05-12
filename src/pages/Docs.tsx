@@ -7,7 +7,8 @@ import {
   TrendingUp, Activity, History, Map, HelpCircle, ChevronRight, Lightbulb,
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS } from "@/lib/chain";
+import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS, CHAINS, getActiveChain } from "@/lib/chain";
+import { Globe } from "lucide-react";
 
 /* ---------- Sidebar config (mirrors the reference layout) ---------- */
 type NavItem = { id: string; label: string; icon: any };
@@ -43,6 +44,7 @@ const NAV: NavGroup[] = [
   {
     title: "Technical",
     items: [
+      { id: "networks",    label: "Networks",          icon: Globe },
       { id: "stack",       label: "Technology Stack",  icon: Code2 },
       { id: "contracts",   label: "Smart Contracts",   icon: FileCode },
       { id: "tokens",      label: "Supported Tokens",  icon: Layers },
@@ -73,25 +75,25 @@ const ROADMAP: Phase[] = [
     "Gas pre-flight + revert reason surfaced in the UI",
     "Persistent transaction history with pending / confirmed / failed states",
     "Premium multi-wallet connect dialog (MetaMask, Rabby, OKX, Bitget, SubWallet, Coinbase, Rainbow, WalletConnect)",
-    "Token registry with verified logos & contract addresses (XRP, ETH, BNB, UNI, HYPE, EGDX, IRL/WIRL)",
   ]},
-  { phase: "Phase 3", title: "Growth — Incentives & Analytics", status: "in_progress", items: [
-    "Liquidity mining with EGDX rewards",
-    "Pool-level fee tier governance",
+  { phase: "Phase 3", title: "Multi-Chain Expansion", status: "done", items: [
+    "Network switcher in header — pick any supported chain on the fly",
+    "Second deployment on Arc Testnet (chainId 5042002, native USDC)",
+    "Per-chain contract registry: Factory, Router, Wrapped native, Library, Multicall, Farm",
+    "Per-chain token registry & per-chain indexer cache (no data mixing on switch)",
+    "Wallet auto-adds the chain via wallet_addEthereumChain on first switch",
+  ]},
+  { phase: "Phase 4", title: "Growth — Incentives & Analytics", status: "in_progress", items: [
+    "Liquidity mining with EGDX rewards on every supported chain",
+    "Cloud-indexed cross-user volume (24h / 7d) via Postgres",
     "Historical TVL/volume charts (7d, 30d, all-time)",
     "Position P&L and impermanent-loss tracker",
   ]},
-  { phase: "Phase 4", title: "Mainnet — Audit & Launch", status: "todo", items: [
+  { phase: "Phase 5", title: "Mainnet — Audit & Launch", status: "todo", items: [
     "Full smart-contract audit",
-    "Mainnet deployment on Integralayer",
-    "Cross-chain bridge integration",
-    "Limit orders & TWAP routing",
-  ]},
-  { phase: "Phase 5", title: "Beyond — Concentrated Liquidity", status: "todo", items: [
-    "Uniswap V3-style concentrated liquidity pools",
-    "Smart routing across multiple pools",
-    "Mobile app (iOS / Android)",
-    "EAGLEDEX DAO governance",
+    "Mainnet deployments",
+    "Cross-chain bridge & unified liquidity routing",
+    "Limit orders, TWAP routing, V3-style concentrated liquidity",
   ]},
 ];
 
@@ -157,12 +159,15 @@ const Docs = () => {
       .filter(g => g.items.length > 0);
   }, [q]);
 
+  const chain = getActiveChain();
   const contracts: { label: string; addr: string }[] = [
-    { label: "Factory",            addr: CONTRACTS.FACTORY },
-    { label: "Router",             addr: CONTRACTS.ROUTER },
-    { label: "WIRL (Wrapped IRL)", addr: CONTRACTS.WETH },
-    { label: "Library",            addr: CONTRACTS.LIBRARY },
-    { label: "Multicall",          addr: CONTRACTS.MULTICALL },
+    { label: "Factory",                              addr: CONTRACTS.FACTORY },
+    { label: "Router",                               addr: CONTRACTS.ROUTER },
+    { label: `Wrapped Native (${chain.wrappedToken.symbol})`, addr: CONTRACTS.WETH },
+    { label: "Library",                              addr: CONTRACTS.LIBRARY },
+    { label: "Multicall",                            addr: CONTRACTS.MULTICALL },
+    { label: "Farm (MasterChef)",                    addr: CONTRACTS.FARM },
+    ...(CONTRACTS.FAUCET ? [{ label: "Faucet", addr: CONTRACTS.FAUCET }] : []),
   ];
 
   return (
@@ -229,16 +234,24 @@ const Docs = () => {
               Welcome to <span className="text-grad">EAGLEDEX</span>
             </h1>
             <p className="text-sm md:text-base text-muted-foreground max-w-3xl">
-              EAGLEDEX is a decentralized exchange built on{" "}
-              <span className="text-foreground font-semibold">Integralayer Testnet</span>, powered by the
-              battle-tested <span className="text-foreground font-semibold">UniswapV2 protocol</span>.
-              Trade, provide liquidity, and earn — all without intermediaries.
+              EAGLEDEX is a <span className="text-foreground font-semibold">multi-chain decentralized exchange</span>{" "}
+              powered by the battle-tested <span className="text-foreground font-semibold">UniswapV2 protocol</span>.
+              It runs natively on{" "}
+              {CHAINS.map((c, i) => (
+                <span key={c.key}>
+                  <span className="text-foreground font-semibold">{c.name}</span>
+                  {i < CHAINS.length - 2 ? ", " : i === CHAINS.length - 2 ? " and " : ""}
+                </span>
+              ))}
+              {" "}— switch any time from the network selector in the header.
+              You're currently viewing docs for <span className="text-primary font-bold">{chain.name}</span>{" "}
+              (chainId {chain.chainId}).
             </p>
 
             {/* Top hero feature row — like the screenshot */}
             <div className="grid sm:grid-cols-3 gap-3 mt-6">
               <FeatureCard icon={Lock}  title="Non-Custodial" desc="You always maintain full control over your assets." accent="green" />
-              <FeatureCard icon={Flame} title="Fast & Cheap"  desc="Low gas fees on Integralayer Testnet." accent="orange" />
+              <FeatureCard icon={Flame} title="Multi-Chain"   desc={`Live on ${CHAINS.length} testnets — pick from the header.`} accent="orange" />
               <FeatureCard icon={Code2} title="Open Source"   desc="Verified and transparent smart contracts." accent="blue" />
             </div>
 
@@ -271,25 +284,34 @@ const Docs = () => {
           <Section id="wallet" kicker="Getting started" title="Connect your wallet">
             <p>
               Click <span className="text-foreground font-semibold">Connect Wallet</span> in the header. EAGLEDEX
-              works with MetaMask, OKX, Rabby and Bitget. The first time you connect, the app will offer to add
-              the Integralayer network automatically (chain {INTEGRALAYER.chainId}).
+              works with MetaMask, OKX, Rabby, Bitget, Coinbase, Rainbow, SubWallet and WalletConnect. The first
+              time you connect, the app will offer to add the active network automatically — currently{" "}
+              <span className="text-foreground font-semibold">{chain.name}</span> (chainId {chain.chainId}).
+              Use the <span className="text-foreground font-semibold">network switcher</span> next to the wallet
+              button to jump between chains; the app will reload with that chain's contracts and tokens.
             </p>
             <ol className="list-decimal pl-5 space-y-1.5">
               <li>Open the wallet menu in the top-right corner.</li>
               <li>Pick a wallet provider — installed wallets are detected automatically.</li>
               <li>Approve the connection request and the network-add prompt if shown.</li>
+              <li>(Optional) Click the globe icon in the header to switch to another supported chain.</li>
             </ol>
           </Section>
 
           {/* Faucet */}
           <Section id="faucet" kicker="Getting started" title="Get testnet tokens">
             <p>
-              You'll need a small amount of native <span className="text-foreground font-semibold">IRL</span> for
-              gas, plus any ERC-20s you want to trade. Use the official Integralayer faucet, then optionally wrap
-              part of your IRL into <span className="text-foreground font-semibold">WIRL</span> to use it inside pools.
+              You'll need a small amount of native <span className="text-foreground font-semibold">{chain.symbol}</span> for
+              gas, plus any ERC-20s you want to trade. {CONTRACTS.FAUCET ? (
+                <>Use the in-app <Link to="/faucet" className="text-primary hover:underline">Faucet</Link> to claim test tokens.</>
+              ) : (
+                <>The Faucet contract is not deployed on this chain yet — bridge or request tokens externally.</>
+              )}
+              {" "}You can also wrap part of your native {chain.symbol} into{" "}
+              <span className="text-foreground font-semibold">{chain.wrappedToken.symbol}</span> to use it inside pools.
             </p>
             <p>
-              Tip: IRL ↔ WIRL is auto-detected as a 1:1 wrap/unwrap on the Swap page — no slippage, no fee.
+              Tip: {chain.symbol} ↔ {chain.wrappedToken.symbol} is auto-detected as a 1:1 wrap/unwrap on the Swap page — no slippage, no fee.
             </p>
           </Section>
 
@@ -364,18 +386,57 @@ const Docs = () => {
             </p>
           </Section>
 
+          {/* Networks (multi-chain overview) */}
+          <Section id="networks" kicker="Technical" title="Supported networks">
+            <p>
+              EAGLEDEX is multi-chain. Each chain has its own Factory, Router, wrapped-native and token registry.
+              Switch the active network from the <span className="text-foreground font-semibold">globe icon</span> in the header.
+            </p>
+            <div className="grid md:grid-cols-2 gap-3 mt-2">
+              {CHAINS.map(c => {
+                const isActive = c.key === chain.key;
+                return (
+                  <div key={c.key} className={`glass rounded-2xl p-4 border ${isActive ? "border-primary/60" : "border-transparent"}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-full btn-primary-grad grid place-items-center text-primary-foreground text-[11px] font-extrabold">
+                          {c.symbol.slice(0, 3)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-foreground leading-tight">{c.name}</div>
+                          <div className="text-[11px] text-muted-foreground">chainId {c.chainId} · native {c.symbol}</div>
+                        </div>
+                      </div>
+                      {isActive && <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">Active</span>}
+                    </div>
+                    <ul className="text-[11px] space-y-1 font-mono">
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">RPC</span><span className="truncate text-foreground">{c.rpcUrl.replace(/^https?:\/\//, "")}</span></li>
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">Explorer</span><a href={c.explorer} target="_blank" rel="noreferrer" className="truncate text-primary hover:underline">{c.explorer.replace(/^https?:\/\//, "")}</a></li>
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">Wrapped</span><span className="truncate text-foreground">{c.wrappedToken.symbol}</span></li>
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">Tokens</span><span className="text-foreground">{c.tokens.length}</span></li>
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+
           {/* Technology stack */}
           <Section id="stack" kicker="Technical" title="Technology stack">
             <ul className="grid sm:grid-cols-2 gap-2 list-none">
-              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Chain</span> · Integralayer Testnet (ID {INTEGRALAYER.chainId})</li>
+              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Chains</span> · {CHAINS.map(c => c.shortName).join(" + ")}</li>
               <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Protocol</span> · UniswapV2-style AMM</li>
-              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Frontend</span> · React + Vite + Tailwind</li>
-              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Indexing</span> · RPC events with adaptive polling</li>
+              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Frontend</span> · React + Vite + Tailwind + ethers v6</li>
+              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Indexing</span> · RPC events + Postgres cloud cache (per chain)</li>
             </ul>
           </Section>
 
           {/* Smart contracts */}
-          <Section id="contracts" kicker="Technical" title="Smart contracts">
+          <Section id="contracts" kicker="Technical" title={`Smart contracts · ${chain.name}`}>
+            <p className="text-xs">
+              Showing the deployed contracts for the currently selected chain. Switch chains from the header to see
+              the addresses on another network.
+            </p>
             <div className="glass rounded-2xl divide-y divide-border/40 overflow-hidden">
               {contracts.map(c => (
                 <div key={c.addr} className="flex items-center justify-between p-3 hover:bg-secondary/40">
@@ -387,15 +448,15 @@ const Docs = () => {
               ))}
             </div>
             <p className="text-xs">
-              RPC: <code className="font-mono">{INTEGRALAYER.rpcUrl}</code> · Explorer:{" "}
-              <a href={INTEGRALAYER.explorer} className="text-primary hover:underline">{INTEGRALAYER.explorer}</a>
+              RPC: <code className="font-mono">{chain.rpcUrl}</code> · Explorer:{" "}
+              <a href={chain.explorer} className="text-primary hover:underline">{chain.explorer}</a>
             </p>
           </Section>
 
           <Section id="tokens" kicker="Technical" title="Supported tokens">
             <p>
               EAGLEDEX is permissionless — any ERC-20 can be paired. Below is the default registry deployed on{" "}
-              <span className="text-foreground font-semibold">{INTEGRALAYER.name}</span>. You can also import
+              <span className="text-foreground font-semibold">{chain.name}</span>. You can also import
               any custom token by address from the token picker.
             </p>
             <div className="glass rounded-2xl divide-y divide-border/40 overflow-hidden">
@@ -473,7 +534,8 @@ const Docs = () => {
                 ["Is EAGLEDEX custodial?", "No. All swaps and LP actions are signed from your wallet and settled on-chain. EAGLEDEX never holds your funds."],
                 ["Why does my swap revert?", "Usually because slippage was exceeded, the deadline passed, or the path has insufficient liquidity. The pre-flight panel surfaces the exact revert reason before you sign."],
                 ["How are LP fees collected?", "Every swap charges 0.30% which is added to the pool reserves. You realize the fees when you burn your LP tokens."],
-                ["What's the difference between IRL and WIRL?", "IRL is the native gas token. WIRL is its 1:1 ERC-20 wrapper used inside pools. Wrap/unwrap is free and instant."],
+                [`What's the difference between ${chain.symbol} and ${chain.wrappedToken.symbol}?`, `${chain.symbol} is the native gas token on ${chain.name}. ${chain.wrappedToken.symbol} is its 1:1 ERC-20 wrapper used inside pools. Wrap/unwrap is free and instant.`],
+                ["How do I switch chains?", "Click the globe icon in the header next to your wallet, pick a network, and the app reloads with that chain's contracts, tokens and indexer cache. Your wallet will be prompted to add or switch to the chain automatically."],
               ].map(([q, a]) => (
                 <details key={q} className="glass rounded-xl p-3 group">
                   <summary className="flex items-center justify-between cursor-pointer font-semibold text-foreground text-sm">
