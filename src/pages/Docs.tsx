@@ -159,11 +159,11 @@ const Docs = () => {
       .filter(g => g.items.length > 0);
   }, [q]);
 
-  const active = getActiveChain();
+  const chain = getActiveChain();
   const contracts: { label: string; addr: string }[] = [
     { label: "Factory",                              addr: CONTRACTS.FACTORY },
     { label: "Router",                               addr: CONTRACTS.ROUTER },
-    { label: `Wrapped Native (${active.wrappedToken.symbol})`, addr: CONTRACTS.WETH },
+    { label: `Wrapped Native (${chain.wrappedToken.symbol})`, addr: CONTRACTS.WETH },
     { label: "Library",                              addr: CONTRACTS.LIBRARY },
     { label: "Multicall",                            addr: CONTRACTS.MULTICALL },
     { label: "Farm (MasterChef)",                    addr: CONTRACTS.FARM },
@@ -244,8 +244,8 @@ const Docs = () => {
                 </span>
               ))}
               {" "}— switch any time from the network selector in the header.
-              You're currently viewing docs for <span className="text-primary font-bold">{active.name}</span>{" "}
-              (chainId {active.chainId}).
+              You're currently viewing docs for <span className="text-primary font-bold">{chain.name}</span>{" "}
+              (chainId {chain.chainId}).
             </p>
 
             {/* Top hero feature row — like the screenshot */}
@@ -286,7 +286,7 @@ const Docs = () => {
               Click <span className="text-foreground font-semibold">Connect Wallet</span> in the header. EAGLEDEX
               works with MetaMask, OKX, Rabby, Bitget, Coinbase, Rainbow, SubWallet and WalletConnect. The first
               time you connect, the app will offer to add the active network automatically — currently{" "}
-              <span className="text-foreground font-semibold">{active.name}</span> (chainId {active.chainId}).
+              <span className="text-foreground font-semibold">{chain.name}</span> (chainId {chain.chainId}).
               Use the <span className="text-foreground font-semibold">network switcher</span> next to the wallet
               button to jump between chains; the app will reload with that chain's contracts and tokens.
             </p>
@@ -301,17 +301,17 @@ const Docs = () => {
           {/* Faucet */}
           <Section id="faucet" kicker="Getting started" title="Get testnet tokens">
             <p>
-              You'll need a small amount of native <span className="text-foreground font-semibold">{active.symbol}</span> for
+              You'll need a small amount of native <span className="text-foreground font-semibold">{chain.symbol}</span> for
               gas, plus any ERC-20s you want to trade. {CONTRACTS.FAUCET ? (
                 <>Use the in-app <Link to="/faucet" className="text-primary hover:underline">Faucet</Link> to claim test tokens.</>
               ) : (
                 <>The Faucet contract is not deployed on this chain yet — bridge or request tokens externally.</>
               )}
-              {" "}You can also wrap part of your native {active.symbol} into{" "}
-              <span className="text-foreground font-semibold">{active.wrappedToken.symbol}</span> to use it inside pools.
+              {" "}You can also wrap part of your native {chain.symbol} into{" "}
+              <span className="text-foreground font-semibold">{chain.wrappedToken.symbol}</span> to use it inside pools.
             </p>
             <p>
-              Tip: {active.symbol} ↔ {active.wrappedToken.symbol} is auto-detected as a 1:1 wrap/unwrap on the Swap page — no slippage, no fee.
+              Tip: {chain.symbol} ↔ {chain.wrappedToken.symbol} is auto-detected as a 1:1 wrap/unwrap on the Swap page — no slippage, no fee.
             </p>
           </Section>
 
