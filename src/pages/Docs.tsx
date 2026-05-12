@@ -7,7 +7,8 @@ import {
   TrendingUp, Activity, History, Map, HelpCircle, ChevronRight, Lightbulb,
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS } from "@/lib/chain";
+import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS, CHAINS, getActiveChain } from "@/lib/chain";
+import { Globe } from "lucide-react";
 
 /* ---------- Sidebar config (mirrors the reference layout) ---------- */
 type NavItem = { id: string; label: string; icon: any };
@@ -43,6 +44,7 @@ const NAV: NavGroup[] = [
   {
     title: "Technical",
     items: [
+      { id: "networks",    label: "Networks",          icon: Globe },
       { id: "stack",       label: "Technology Stack",  icon: Code2 },
       { id: "contracts",   label: "Smart Contracts",   icon: FileCode },
       { id: "tokens",      label: "Supported Tokens",  icon: Layers },
@@ -73,25 +75,25 @@ const ROADMAP: Phase[] = [
     "Gas pre-flight + revert reason surfaced in the UI",
     "Persistent transaction history with pending / confirmed / failed states",
     "Premium multi-wallet connect dialog (MetaMask, Rabby, OKX, Bitget, SubWallet, Coinbase, Rainbow, WalletConnect)",
-    "Token registry with verified logos & contract addresses (XRP, ETH, BNB, UNI, HYPE, EGDX, IRL/WIRL)",
   ]},
-  { phase: "Phase 3", title: "Growth — Incentives & Analytics", status: "in_progress", items: [
-    "Liquidity mining with EGDX rewards",
-    "Pool-level fee tier governance",
+  { phase: "Phase 3", title: "Multi-Chain Expansion", status: "done", items: [
+    "Network switcher in header — pick any supported chain on the fly",
+    "Second deployment on Arc Testnet (chainId 5042002, native USDC)",
+    "Per-chain contract registry: Factory, Router, Wrapped native, Library, Multicall, Farm",
+    "Per-chain token registry & per-chain indexer cache (no data mixing on switch)",
+    "Wallet auto-adds the chain via wallet_addEthereumChain on first switch",
+  ]},
+  { phase: "Phase 4", title: "Growth — Incentives & Analytics", status: "in_progress", items: [
+    "Liquidity mining with EGDX rewards on every supported chain",
+    "Cloud-indexed cross-user volume (24h / 7d) via Postgres",
     "Historical TVL/volume charts (7d, 30d, all-time)",
     "Position P&L and impermanent-loss tracker",
   ]},
-  { phase: "Phase 4", title: "Mainnet — Audit & Launch", status: "todo", items: [
+  { phase: "Phase 5", title: "Mainnet — Audit & Launch", status: "todo", items: [
     "Full smart-contract audit",
-    "Mainnet deployment on Integralayer",
-    "Cross-chain bridge integration",
-    "Limit orders & TWAP routing",
-  ]},
-  { phase: "Phase 5", title: "Beyond — Concentrated Liquidity", status: "todo", items: [
-    "Uniswap V3-style concentrated liquidity pools",
-    "Smart routing across multiple pools",
-    "Mobile app (iOS / Android)",
-    "EAGLEDEX DAO governance",
+    "Mainnet deployments",
+    "Cross-chain bridge & unified liquidity routing",
+    "Limit orders, TWAP routing, V3-style concentrated liquidity",
   ]},
 ];
 
