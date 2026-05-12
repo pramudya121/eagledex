@@ -3,7 +3,8 @@ import Logo from "./Logo";
 import WalletButton from "./WalletButton";
 import NebulaBackground from "./NebulaBackground";
 import TxStatusBar from "./TxStatusBar";
-
+import NetworkSwitcher from "./NetworkSwitcher";
+import { getActiveChain } from "@/lib/chain";
 
 import { ArrowLeftRight, Droplets, Layers, BarChart3, Briefcase, BookOpen, Home, Sprout, Droplet } from "lucide-react";
 
@@ -39,6 +40,7 @@ const Layout = () => (
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <NetworkSwitcher />
           <TxStatusBar />
           <WalletButton />
         </div>
@@ -60,7 +62,7 @@ const Layout = () => (
       <Outlet />
     </main>
     <footer className="border-t border-border/40 py-6 text-center text-xs text-muted-foreground">
-      EAGLEDEX • Built on Integralayer Testnet • Chain ID 26218
+      EAGLEDEX • Multi-chain DEX • Active: {getActiveChain().name} (chainId {getActiveChain().chainId})
     </footer>
   </div>
 );
