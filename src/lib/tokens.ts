@@ -3,7 +3,9 @@ import { Contract, JsonRpcProvider, isAddress } from "ethers";
 import { TOKENS, TokenInfo } from "./chain";
 import { ERC20_ABI } from "./abis";
 
-const KEY = "eagledex:customTokens";
+import { getActiveChainKey } from "./chains";
+
+const KEY = `eagledex:customTokens:${getActiveChainKey()}`;
 
 export function loadCustomTokens(): TokenInfo[] {
   try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
