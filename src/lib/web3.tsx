@@ -210,7 +210,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     const addParams = [{
       chainId: INTEGRALAYER.chainIdHex,
       chainName: INTEGRALAYER.name,
-      nativeCurrency: { name: "IRL", symbol: INTEGRALAYER.symbol, decimals: 18 },
+      nativeCurrency: { name: INTEGRALAYER.symbol, symbol: INTEGRALAYER.symbol, decimals: INTEGRALAYER.decimals },
       rpcUrls: [INTEGRALAYER.rpcUrl],
       blockExplorerUrls: [INTEGRALAYER.explorer],
     }];

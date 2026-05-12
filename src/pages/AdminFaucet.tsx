@@ -39,6 +39,15 @@ const TokenLogo = ({ address, symbol, size = 36 }: { address: string; symbol: st
 
 const AdminFaucet = () => {
   const { account, signer, readProvider } = useWeb3();
+  if (!CONTRACTS.FAUCET) {
+    return (
+      <div className="max-w-xl mx-auto mt-16 glass rounded-2xl p-8 text-center">
+        <Shield className="w-10 h-10 mx-auto text-primary mb-3" />
+        <h1 className="text-xl font-extrabold mb-2">Admin Faucet not deployed on this network</h1>
+        <p className="text-sm text-muted-foreground">Switch to a chain that has a faucet contract.</p>
+      </div>
+    );
+  }
   const [owner, setOwner] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<bigint>(0n);
   const [tokens, setTokens] = useState<FaucetTokenInfo[]>([]);

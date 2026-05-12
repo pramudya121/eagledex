@@ -75,7 +75,9 @@ interface State {
 }
 
 // ---- Persistence -----------------------------------------------------------
-const CACHE_KEY = "eagledex:indexer:v3";
+// Per-chain cache key — switching networks must not mix datasets.
+import { getActiveChainKey } from "./chains";
+const CACHE_KEY = `eagledex:indexer:v3:${getActiveChainKey()}`;
 const HISTORY_MAX = 500;
 const RECENT_MAX = 100;
 const CACHE_DEBOUNCE_MS = 1500;

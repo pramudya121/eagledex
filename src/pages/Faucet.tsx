@@ -11,6 +11,17 @@ import { sendTx } from "@/lib/tx";
 
 const Faucet = () => {
   const { account, signer, readProvider } = useWeb3();
+  if (!CONTRACTS.FAUCET) {
+    return (
+      <div className="max-w-xl mx-auto mt-16 glass rounded-2xl p-8 text-center">
+        <Droplet className="w-10 h-10 mx-auto text-primary mb-3" />
+        <h1 className="text-xl font-extrabold mb-2">Faucet not deployed on this network</h1>
+        <p className="text-sm text-muted-foreground">
+          The token faucet is not available on the currently selected chain. Switch network from the header to use the faucet.
+        </p>
+      </div>
+    );
+  }
   const [tokens, setTokens] = useState<FaucetTokenInfo[]>([]);
   const [cooldown, setCooldown] = useState<bigint>(0n);
   const [owner, setOwner] = useState<string | null>(null);
