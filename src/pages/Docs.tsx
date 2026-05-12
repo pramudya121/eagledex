@@ -386,18 +386,57 @@ const Docs = () => {
             </p>
           </Section>
 
+          {/* Networks (multi-chain overview) */}
+          <Section id="networks" kicker="Technical" title="Supported networks">
+            <p>
+              EAGLEDEX is multi-chain. Each chain has its own Factory, Router, wrapped-native and token registry.
+              Switch the active network from the <span className="text-foreground font-semibold">globe icon</span> in the header.
+            </p>
+            <div className="grid md:grid-cols-2 gap-3 mt-2">
+              {CHAINS.map(c => {
+                const isActive = c.key === chain.key;
+                return (
+                  <div key={c.key} className={`glass rounded-2xl p-4 border ${isActive ? "border-primary/60" : "border-transparent"}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-full btn-primary-grad grid place-items-center text-primary-foreground text-[11px] font-extrabold">
+                          {c.symbol.slice(0, 3)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-foreground leading-tight">{c.name}</div>
+                          <div className="text-[11px] text-muted-foreground">chainId {c.chainId} · native {c.symbol}</div>
+                        </div>
+                      </div>
+                      {isActive && <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">Active</span>}
+                    </div>
+                    <ul className="text-[11px] space-y-1 font-mono">
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">RPC</span><span className="truncate text-foreground">{c.rpcUrl.replace(/^https?:\/\//, "")}</span></li>
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">Explorer</span><a href={c.explorer} target="_blank" rel="noreferrer" className="truncate text-primary hover:underline">{c.explorer.replace(/^https?:\/\//, "")}</a></li>
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">Wrapped</span><span className="truncate text-foreground">{c.wrappedToken.symbol}</span></li>
+                      <li className="flex justify-between gap-2"><span className="text-muted-foreground">Tokens</span><span className="text-foreground">{c.tokens.length}</span></li>
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+
           {/* Technology stack */}
           <Section id="stack" kicker="Technical" title="Technology stack">
             <ul className="grid sm:grid-cols-2 gap-2 list-none">
-              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Chain</span> · Integralayer Testnet (ID {INTEGRALAYER.chainId})</li>
+              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Chains</span> · {CHAINS.map(c => c.shortName).join(" + ")}</li>
               <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Protocol</span> · UniswapV2-style AMM</li>
-              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Frontend</span> · React + Vite + Tailwind</li>
-              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Indexing</span> · RPC events with adaptive polling</li>
+              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Frontend</span> · React + Vite + Tailwind + ethers v6</li>
+              <li className="glass rounded-xl p-3"><span className="text-foreground font-semibold">Indexing</span> · RPC events + Postgres cloud cache (per chain)</li>
             </ul>
           </Section>
 
           {/* Smart contracts */}
-          <Section id="contracts" kicker="Technical" title="Smart contracts">
+          <Section id="contracts" kicker="Technical" title={`Smart contracts · ${chain.name}`}>
+            <p className="text-xs">
+              Showing the deployed contracts for the currently selected chain. Switch chains from the header to see
+              the addresses on another network.
+            </p>
             <div className="glass rounded-2xl divide-y divide-border/40 overflow-hidden">
               {contracts.map(c => (
                 <div key={c.addr} className="flex items-center justify-between p-3 hover:bg-secondary/40">
@@ -409,8 +448,8 @@ const Docs = () => {
               ))}
             </div>
             <p className="text-xs">
-              RPC: <code className="font-mono">{INTEGRALAYER.rpcUrl}</code> · Explorer:{" "}
-              <a href={INTEGRALAYER.explorer} className="text-primary hover:underline">{INTEGRALAYER.explorer}</a>
+              RPC: <code className="font-mono">{chain.rpcUrl}</code> · Explorer:{" "}
+              <a href={chain.explorer} className="text-primary hover:underline">{chain.explorer}</a>
             </p>
           </Section>
 
