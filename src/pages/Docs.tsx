@@ -456,7 +456,7 @@ const Docs = () => {
           <Section id="tokens" kicker="Technical" title="Supported tokens">
             <p>
               EAGLEDEX is permissionless — any ERC-20 can be paired. Below is the default registry deployed on{" "}
-              <span className="text-foreground font-semibold">{INTEGRALAYER.name}</span>. You can also import
+              <span className="text-foreground font-semibold">{chain.name}</span>. You can also import
               any custom token by address from the token picker.
             </p>
             <div className="glass rounded-2xl divide-y divide-border/40 overflow-hidden">
@@ -534,7 +534,8 @@ const Docs = () => {
                 ["Is EAGLEDEX custodial?", "No. All swaps and LP actions are signed from your wallet and settled on-chain. EAGLEDEX never holds your funds."],
                 ["Why does my swap revert?", "Usually because slippage was exceeded, the deadline passed, or the path has insufficient liquidity. The pre-flight panel surfaces the exact revert reason before you sign."],
                 ["How are LP fees collected?", "Every swap charges 0.30% which is added to the pool reserves. You realize the fees when you burn your LP tokens."],
-                ["What's the difference between IRL and WIRL?", "IRL is the native gas token. WIRL is its 1:1 ERC-20 wrapper used inside pools. Wrap/unwrap is free and instant."],
+                [`What's the difference between ${chain.symbol} and ${chain.wrappedToken.symbol}?`, `${chain.symbol} is the native gas token on ${chain.name}. ${chain.wrappedToken.symbol} is its 1:1 ERC-20 wrapper used inside pools. Wrap/unwrap is free and instant.`],
+                ["How do I switch chains?", "Click the globe icon in the header next to your wallet, pick a network, and the app reloads with that chain's contracts, tokens and indexer cache. Your wallet will be prompted to add or switch to the chain automatically."],
               ].map(([q, a]) => (
                 <details key={q} className="glass rounded-xl p-3 group">
                   <summary className="flex items-center justify-between cursor-pointer font-semibold text-foreground text-sm">
