@@ -159,12 +159,15 @@ const Docs = () => {
       .filter(g => g.items.length > 0);
   }, [q]);
 
+  const active = getActiveChain();
   const contracts: { label: string; addr: string }[] = [
-    { label: "Factory",            addr: CONTRACTS.FACTORY },
-    { label: "Router",             addr: CONTRACTS.ROUTER },
-    { label: "WIRL (Wrapped IRL)", addr: CONTRACTS.WETH },
-    { label: "Library",            addr: CONTRACTS.LIBRARY },
-    { label: "Multicall",          addr: CONTRACTS.MULTICALL },
+    { label: "Factory",                              addr: CONTRACTS.FACTORY },
+    { label: "Router",                               addr: CONTRACTS.ROUTER },
+    { label: `Wrapped Native (${active.wrappedToken.symbol})`, addr: CONTRACTS.WETH },
+    { label: "Library",                              addr: CONTRACTS.LIBRARY },
+    { label: "Multicall",                            addr: CONTRACTS.MULTICALL },
+    { label: "Farm (MasterChef)",                    addr: CONTRACTS.FARM },
+    ...(CONTRACTS.FAUCET ? [{ label: "Faucet", addr: CONTRACTS.FAUCET }] : []),
   ];
 
   return (
@@ -231,16 +234,24 @@ const Docs = () => {
               Welcome to <span className="text-grad">EAGLEDEX</span>
             </h1>
             <p className="text-sm md:text-base text-muted-foreground max-w-3xl">
-              EAGLEDEX is a decentralized exchange built on{" "}
-              <span className="text-foreground font-semibold">Integralayer Testnet</span>, powered by the
-              battle-tested <span className="text-foreground font-semibold">UniswapV2 protocol</span>.
-              Trade, provide liquidity, and earn — all without intermediaries.
+              EAGLEDEX is a <span className="text-foreground font-semibold">multi-chain decentralized exchange</span>{" "}
+              powered by the battle-tested <span className="text-foreground font-semibold">UniswapV2 protocol</span>.
+              It runs natively on{" "}
+              {CHAINS.map((c, i) => (
+                <span key={c.key}>
+                  <span className="text-foreground font-semibold">{c.name}</span>
+                  {i < CHAINS.length - 2 ? ", " : i === CHAINS.length - 2 ? " and " : ""}
+                </span>
+              ))}
+              {" "}— switch any time from the network selector in the header.
+              You're currently viewing docs for <span className="text-primary font-bold">{active.name}</span>{" "}
+              (chainId {active.chainId}).
             </p>
 
             {/* Top hero feature row — like the screenshot */}
             <div className="grid sm:grid-cols-3 gap-3 mt-6">
               <FeatureCard icon={Lock}  title="Non-Custodial" desc="You always maintain full control over your assets." accent="green" />
-              <FeatureCard icon={Flame} title="Fast & Cheap"  desc="Low gas fees on Integralayer Testnet." accent="orange" />
+              <FeatureCard icon={Flame} title="Multi-Chain"   desc={`Live on ${CHAINS.length} testnets — pick from the header.`} accent="orange" />
               <FeatureCard icon={Code2} title="Open Source"   desc="Verified and transparent smart contracts." accent="blue" />
             </div>
 
@@ -273,25 +284,34 @@ const Docs = () => {
           <Section id="wallet" kicker="Getting started" title="Connect your wallet">
             <p>
               Click <span className="text-foreground font-semibold">Connect Wallet</span> in the header. EAGLEDEX
-              works with MetaMask, OKX, Rabby and Bitget. The first time you connect, the app will offer to add
-              the Integralayer network automatically (chain {INTEGRALAYER.chainId}).
+              works with MetaMask, OKX, Rabby, Bitget, Coinbase, Rainbow, SubWallet and WalletConnect. The first
+              time you connect, the app will offer to add the active network automatically — currently{" "}
+              <span className="text-foreground font-semibold">{active.name}</span> (chainId {active.chainId}).
+              Use the <span className="text-foreground font-semibold">network switcher</span> next to the wallet
+              button to jump between chains; the app will reload with that chain's contracts and tokens.
             </p>
             <ol className="list-decimal pl-5 space-y-1.5">
               <li>Open the wallet menu in the top-right corner.</li>
               <li>Pick a wallet provider — installed wallets are detected automatically.</li>
               <li>Approve the connection request and the network-add prompt if shown.</li>
+              <li>(Optional) Click the globe icon in the header to switch to another supported chain.</li>
             </ol>
           </Section>
 
           {/* Faucet */}
           <Section id="faucet" kicker="Getting started" title="Get testnet tokens">
             <p>
-              You'll need a small amount of native <span className="text-foreground font-semibold">IRL</span> for
-              gas, plus any ERC-20s you want to trade. Use the official Integralayer faucet, then optionally wrap
-              part of your IRL into <span className="text-foreground font-semibold">WIRL</span> to use it inside pools.
+              You'll need a small amount of native <span className="text-foreground font-semibold">{active.symbol}</span> for
+              gas, plus any ERC-20s you want to trade. {CONTRACTS.FAUCET ? (
+                <>Use the in-app <Link to="/faucet" className="text-primary hover:underline">Faucet</Link> to claim test tokens.</>
+              ) : (
+                <>The Faucet contract is not deployed on this chain yet — bridge or request tokens externally.</>
+              )}
+              {" "}You can also wrap part of your native {active.symbol} into{" "}
+              <span className="text-foreground font-semibold">{active.wrappedToken.symbol}</span> to use it inside pools.
             </p>
             <p>
-              Tip: IRL ↔ WIRL is auto-detected as a 1:1 wrap/unwrap on the Swap page — no slippage, no fee.
+              Tip: {active.symbol} ↔ {active.wrappedToken.symbol} is auto-detected as a 1:1 wrap/unwrap on the Swap page — no slippage, no fee.
             </p>
           </Section>
 
