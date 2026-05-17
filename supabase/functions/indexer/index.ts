@@ -99,16 +99,15 @@ Deno.serve(async (req) => {
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
     const cursorBlock = Number(cur?.last_block ?? 0);
 
-    // BACKFILL: pairs exist but no events yet → rewind cursor to cover ~last 48h of activity (≈ 50k blocks).
+    // BACKFILL: pairs exist but no events yet → rewind cursor in smaller chunks per call.
     const { count: evtCount } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
-    const BACKFILL_BLOCKS = 50_000;
+    const BACKFILL_BLOCKS = 5_000;
 
     let from: number;
     if (pairs.length > 0 && (evtCount ?? 0) === 0) {
       from = Math.max(0, head - BACKFILL_BLOCKS);
-      console.log(`backfill: rewinding to head-${BACKFILL_BLOCKS} = ${from}`);
     } else if (cursorBlock === 0) {
-      from = Math.max(0, head - 5_000);
+      from = Math.max(0, head - 2_000);
     } else {
       from = cursorBlock + 1;
     }
@@ -117,12 +116,12 @@ Deno.serve(async (req) => {
       return json({ ok: true, head, from, to, scanned: 0, message: "up to date" });
     }
 
-
-    // Upsert pair metadata (cheap if already exists)
-    for (const p of pairs) {
-      const { data: existing } = await supabase.from("pairs_state").select("pair").eq("pair", p).maybeSingle();
-      if (!existing) await loadPairMeta(supabase, provider, p);
-    }
+    // Batch-check existing pair metadata in one query; load at most MAX_META_PER_CALL missing per invocation.
+    const { data: existingMeta } = await supabase
+      .from("pairs_state").select("pair").in("pair", pairs);
+    const haveMeta = new Set((existingMeta ?? []).map((r: any) => r.pair));
+    const missing = pairs.filter(p => !haveMeta.has(p)).slice(0, MAX_META_PER_CALL);
+    for (const p of missing) await loadPairMeta(supabase, provider, p);
 
     let scanned = 0;
     const blockTsCache = new Map<number, string>();
