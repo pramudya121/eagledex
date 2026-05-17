@@ -320,8 +320,8 @@ const Analytics = () => {
                 <div className="col-span-1 font-mono text-xs text-muted-foreground">{i+1}</div>
                 <div className="col-span-5 flex items-center gap-2 min-w-0">
                   <div className="flex -space-x-2 shrink-0">
-                    {p.logo0 ? <img src={p.logo0} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
-                    {p.logo1 ? <img src={p.logo1} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
+                    {p.logo0 ? <img src={p.logo0} alt={`${p.symbol0} token`} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
+                    {p.logo1 ? <img src={p.logo1} alt={`${p.symbol1} token`} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
                   </div>
                   <span className="font-semibold truncate">{p.symbol0}/{p.symbol1}</span>
                 </div>
