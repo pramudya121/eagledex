@@ -8,6 +8,7 @@ import { usePoolIndex, poolTVL, poolPrice, poolVolume, poolVolumeWindow, poolInd
 import { useCloudIndex, cloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PoolChartDialog from "@/components/PoolChartDialog";
+import Seo from "@/components/Seo";
 
 type SortKey = "tvl" | "vol" | "swaps";
 
