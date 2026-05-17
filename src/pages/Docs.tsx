@@ -180,6 +180,20 @@ const Docs = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up">
+      <Seo
+        title="Documentation & FAQ — EAGLEDEX"
+        description="EAGLEDEX docs: supported networks, smart-contract addresses, integration guide, roadmap and frequently asked questions."
+        path="/docs"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQ_ITEMS.map(([q, a]) => ({
+            "@type": "Question",
+            name: q,
+            acceptedAnswer: { "@type": "Answer", text: a },
+          })),
+        }}
+      />
       <div className="grid lg:grid-cols-[260px_1fr] gap-6">
         {/* ============== SIDEBAR ============== */}
         <aside className="lg:sticky lg:top-20 self-start">
