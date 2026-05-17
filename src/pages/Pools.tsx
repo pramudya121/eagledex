@@ -54,6 +54,11 @@ const Pools = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up">
+      <Seo
+        title="Liquidity Pools — EAGLEDEX"
+        description="Browse every EAGLEDEX liquidity pool with live TVL, 24h volume and swap activity indexed directly from on-chain events."
+        path="/pools"
+      />
       {/* Hero */}
       <div className="text-center mb-6">
         <h1 className="text-4xl font-extrabold tracking-tight"><span className="text-grad">Liquidity Pools</span></h1>
