@@ -192,6 +192,11 @@ const Farming = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <Seo
+        title="Farming — Stake LP & Earn Rewards on EAGLEDEX"
+        description="Stake EAGLEDEX LP or single tokens into MasterChef-style farms and earn reward emissions every block."
+        path="/farming"
+      />
       {/* Hero */}
       <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/20 via-card/60 to-transparent p-8">
         <div className="absolute inset-0 pointer-events-none">
