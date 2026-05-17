@@ -18,9 +18,10 @@ const CHAIN_ID = 26218;
 const RPC = "https://testnet.integralayer.com/evm";
 const FACTORY = "0x5687FDA3BdE14d38057699c402606ab470EcA873";
 
-const MAX_BLOCKS_PER_CALL = 4_000;
-const STEP = 500;
-const MIN_STEP = 50;
+const MAX_BLOCKS_PER_CALL = 1_500;
+const STEP = 1_500;
+const MIN_STEP = 100;
+const MAX_META_PER_CALL = 3;
 
 // Retry getLogs with adaptive range halving on RPC timeouts.
 async function getLogsRetry(provider: ethers.JsonRpcProvider, filter: any): Promise<any[]> {
@@ -98,16 +99,15 @@ Deno.serve(async (req) => {
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
     const cursorBlock = Number(cur?.last_block ?? 0);
 
-    // BACKFILL: pairs exist but no events yet → rewind cursor to cover ~last 48h of activity (≈ 50k blocks).
+    // BACKFILL: pairs exist but no events yet → rewind cursor in smaller chunks per call.
     const { count: evtCount } = await supabase.from("pair_events").select("*", { count: "exact", head: true }).eq("chain_id", CHAIN_ID);
-    const BACKFILL_BLOCKS = 50_000;
+    const BACKFILL_BLOCKS = 5_000;
 
     let from: number;
     if (pairs.length > 0 && (evtCount ?? 0) === 0) {
       from = Math.max(0, head - BACKFILL_BLOCKS);
-      console.log(`backfill: rewinding to head-${BACKFILL_BLOCKS} = ${from}`);
     } else if (cursorBlock === 0) {
-      from = Math.max(0, head - 5_000);
+      from = Math.max(0, head - 2_000);
     } else {
       from = cursorBlock + 1;
     }
@@ -116,12 +116,12 @@ Deno.serve(async (req) => {
       return json({ ok: true, head, from, to, scanned: 0, message: "up to date" });
     }
 
-
-    // Upsert pair metadata (cheap if already exists)
-    for (const p of pairs) {
-      const { data: existing } = await supabase.from("pairs_state").select("pair").eq("pair", p).maybeSingle();
-      if (!existing) await loadPairMeta(supabase, provider, p);
-    }
+    // Batch-check existing pair metadata in one query; load at most MAX_META_PER_CALL missing per invocation.
+    const { data: existingMeta } = await supabase
+      .from("pairs_state").select("pair").in("pair", pairs);
+    const haveMeta = new Set((existingMeta ?? []).map((r: any) => r.pair));
+    const missing = pairs.filter(p => !haveMeta.has(p)).slice(0, MAX_META_PER_CALL);
+    for (const p of missing) await loadPairMeta(supabase, provider, p);
 
     let scanned = 0;
     const blockTsCache = new Map<number, string>();
@@ -231,7 +231,8 @@ Deno.serve(async (req) => {
       .gte("block_number", from)
       .lte("block_number", effectiveTo);
     (recent ?? []).forEach((r: any) => touched.add(r.pair));
-    for (const p of touched) await refreshPairState(supabase, provider, p);
+    const touchedArr = Array.from(touched).slice(0, 5);
+    for (const p of touchedArr) await refreshPairState(supabase, provider, p);
 
     if (effectiveTo >= from) {
       await supabase.from("indexer_cursor").upsert({ chain_id: CHAIN_ID, last_block: effectiveTo, updated_at: new Date().toISOString() });
