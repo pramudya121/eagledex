@@ -18,10 +18,11 @@ const CHAIN_ID = 26218;
 const RPC = "https://testnet.integralayer.com/evm";
 const FACTORY = "0x5687FDA3BdE14d38057699c402606ab470EcA873";
 
-const MAX_BLOCKS_PER_CALL = 1_500;
-const STEP = 1_500;
+const MAX_BLOCKS_PER_CALL = 800;
+const STEP = 800;
 const MIN_STEP = 100;
-const MAX_META_PER_CALL = 3;
+const MAX_META_PER_CALL = 2;
+const ASSUMED_BLOCK_TIME = 3; // seconds, used to approximate block_ts and avoid per-block getBlock RPC
 
 // Retry getLogs with adaptive range halving on RPC timeouts.
 async function getLogsRetry(provider: ethers.JsonRpcProvider, filter: any): Promise<any[]> {
