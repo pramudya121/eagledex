@@ -17,6 +17,11 @@ const Home = () => {
 
   return (
     <div className="animate-slide-up">
+      <Seo
+        title="EAGLEDEX — On-chain AMM on Integralayer & ARC Testnet"
+        description="Swap tokens, provide liquidity and earn fees on EAGLEDEX, a fully on-chain Uniswap-V2-style AMM live on Integralayer and ARC testnets."
+        path="/"
+      />
       {/* HERO */}
       <section className="relative grid lg:grid-cols-2 gap-10 items-center pt-4 pb-12">
         <div className="space-y-6 relative z-10">
