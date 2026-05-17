@@ -6,6 +6,7 @@ import { usePoolIndex, poolTVL, poolVolume } from "@/lib/poolIndex";
 import { useCloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PriceChart from "@/components/PriceChart";
+import Seo from "@/components/Seo";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, Legend,
