@@ -99,7 +99,7 @@ const Feature = ({ icon: Icon, title, desc }: { icon: any; title: string; desc: 
     <div className="w-10 h-10 rounded-xl btn-primary-grad grid place-items-center mb-3">
       <Icon className="w-5 h-5 text-primary-foreground" />
     </div>
-    <h3 className="font-bold text-lg mb-1">{title}</h3>
+    <h2 className="font-bold text-lg mb-1">{title}</h2>
     <p className="text-sm text-muted-foreground">{desc}</p>
   </div>
 );
