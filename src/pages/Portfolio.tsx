@@ -171,6 +171,11 @@ const Portfolio = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <Seo
+        title="Portfolio — EAGLEDEX"
+        description="Track your token balances, LP positions and liquidity activity across EAGLEDEX pools from a single dashboard."
+        path="/portfolio"
+      />
       <SendTokenDialog open={sendOpen} onOpenChange={setSendOpen} initialToken={sendToken} />
 
       {/* Hero */}
