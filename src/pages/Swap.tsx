@@ -13,6 +13,7 @@ import { findBestRoute, impactSeverity, RouteQuote } from "@/lib/router";
 import { ArrowDown, Settings, Loader2, Zap, Repeat, AlertTriangle, Route as RouteIcon, Info, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
+import Seo from "@/components/Seo";
 import TxPreflight from "@/components/TxPreflight";
 import { NATIVE_TOKEN as NATIVE } from "@/lib/chain";
 import { usePersistedPref } from "@/lib/userPrefs";
