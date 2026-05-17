@@ -1,0 +1,20 @@
+# EAGLEDEX
+
+> EAGLEDEX is a fully on-chain Uniswap-V2-style AMM running on Integralayer Testnet and ARC Testnet. Users can swap tokens, provide liquidity, create new pools, farm rewards, and explore live pool analytics across multiple chains.
+
+## Pages
+
+- [Home](/): Overview of EAGLEDEX features, supported chains and quick links to swap, pools and analytics.
+- [Swap](/swap): Swap any supported ERC-20 token with transparent routing and live price quotes.
+- [Liquidity](/liquidity): Add or remove liquidity from existing pools and track your LP positions.
+- [Create Pool](/create-pool): Wizard for deploying a new ERC-20/ERC-20 liquidity pool via the on-chain factory.
+- [Pools](/pools): Browse every liquidity pool with TVL, 24h volume and APR.
+- [Analytics](/analytics): Cross-user TVL and volume analytics indexed from on-chain Swap, Mint, Burn and Sync events.
+- [Portfolio](/portfolio): View your token balances, LP positions and historical liquidity activity.
+- [Farming](/farming): Stake LP tokens in active farms to earn reward emissions.
+- [Faucet](/faucet): Claim testnet tokens used across EAGLEDEX (per-chain availability).
+- [Documentation](/docs): Smart-contract addresses, supported networks, FAQ and integration guide.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Machine-readable list of all public routes.
