@@ -135,7 +135,7 @@ const Pools = () => {
             <div className="w-16 h-16 mx-auto rounded-2xl btn-primary-grad grid place-items-center mb-4 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)]">
               <Droplets className="w-7 h-7 text-primary-foreground" />
             </div>
-            <h3 className="text-2xl font-extrabold tracking-tight mb-1">Be the first liquidity provider</h3>
+            <h2 className="text-2xl font-extrabold tracking-tight mb-1">Be the first liquidity provider</h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-5">
               No pools have been indexed yet. Open the Liquidity page, choose two tokens, approve them once, then add liquidity — the pair is created automatically on your first deposit.
             </p>
