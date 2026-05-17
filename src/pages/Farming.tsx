@@ -288,9 +288,9 @@ const Farming = () => {
           <div className="w-16 h-16 mx-auto rounded-2xl btn-primary-grad grid place-items-center mb-4">
             <Sprout className="w-7 h-7 text-primary-foreground"/>
           </div>
-          <h3 className="text-2xl font-extrabold tracking-tight mb-1">
+          <h2 className="text-2xl font-extrabold tracking-tight mb-1">
             {query ? "No matches" : tab === "staked" ? "No active stakes yet" : "No farms yet"}
-          </h3>
+          </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {query
               ? "Try a different symbol or address."
