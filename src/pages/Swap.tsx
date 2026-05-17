@@ -231,6 +231,11 @@ const Swap = () => {
 
   return (
     <div className="max-w-md mx-auto animate-slide-up">
+      <Seo
+        title="Swap Tokens — EAGLEDEX"
+        description="Swap ERC-20 tokens on EAGLEDEX with transparent on-chain routing, live price quotes and per-trade slippage controls."
+        path="/swap"
+      />
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-3">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
