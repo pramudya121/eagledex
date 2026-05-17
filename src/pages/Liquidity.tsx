@@ -13,6 +13,7 @@ import { validateAmount, validateSlippageBps, validateDeadlineMinutes } from "@/
 import { poolIndex } from "@/lib/poolIndex";
 import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import Seo from "@/components/Seo";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { usePersistedPref } from "@/lib/userPrefs";
