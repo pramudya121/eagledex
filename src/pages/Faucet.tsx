@@ -8,6 +8,7 @@ import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { FAUCET_ABI } from "@/lib/abis";
 import { getFaucet, readFaucetTokens, nextClaimAt, FaucetTokenInfo } from "@/lib/faucet";
 import { sendTx } from "@/lib/tx";
+import Seo from "@/components/Seo";
 
 const Faucet = () => {
   const { account, signer, readProvider } = useWeb3();
