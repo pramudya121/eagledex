@@ -220,7 +220,7 @@ const Portfolio = () => {
             {/* Native row with Send button */}
             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/40 transition border border-transparent hover:border-primary/30">
               <div className="flex items-center gap-3 min-w-0">
-                <img src={NATIVE_TOKEN.logo} className="w-9 h-9 rounded-full object-cover bg-secondary"/>
+                <img src={NATIVE_TOKEN.logo} alt={`${NATIVE_TOKEN.symbol} logo`} className="w-9 h-9 rounded-full object-cover bg-secondary"/>
                 <div className="min-w-0">
                   <div className="font-semibold flex items-center gap-2">{NATIVE_TOKEN.symbol} <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary">native</span></div>
                   <div className="text-[11px] text-muted-foreground truncate">{NATIVE_TOKEN.name}</div>
