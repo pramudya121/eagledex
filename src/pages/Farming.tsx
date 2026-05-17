@@ -13,6 +13,7 @@ import { subscribeFarmEvents, refetchPoolForUser } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import Seo from "@/components/Seo";
 import { FarmHistory } from "@/components/FarmHistory";
 import { validateAmount } from "@/lib/validate";
 
@@ -191,6 +192,11 @@ const Farming = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <Seo
+        title="Farming — Stake LP & Earn Rewards on EAGLEDEX"
+        description="Stake EAGLEDEX LP or single tokens into MasterChef-style farms and earn reward emissions every block."
+        path="/farming"
+      />
       {/* Hero */}
       <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/20 via-card/60 to-transparent p-8">
         <div className="absolute inset-0 pointer-events-none">
@@ -282,9 +288,9 @@ const Farming = () => {
           <div className="w-16 h-16 mx-auto rounded-2xl btn-primary-grad grid place-items-center mb-4">
             <Sprout className="w-7 h-7 text-primary-foreground"/>
           </div>
-          <h3 className="text-2xl font-extrabold tracking-tight mb-1">
+          <h2 className="text-2xl font-extrabold tracking-tight mb-1">
             {query ? "No matches" : tab === "staked" ? "No active stakes yet" : "No farms yet"}
-          </h3>
+          </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {query
               ? "Try a different symbol or address."

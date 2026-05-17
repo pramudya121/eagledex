@@ -13,6 +13,7 @@ import { useTxHistory, TxRecord } from "@/lib/txStore";
 import SyncBadge from "@/components/SyncBadge";
 import { toast } from "sonner";
 import SendTokenDialog from "@/components/SendTokenDialog";
+import Seo from "@/components/Seo";
 import TxHistoryButton from "@/components/TxHistoryButton";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -170,6 +171,11 @@ const Portfolio = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <Seo
+        title="Portfolio — EAGLEDEX"
+        description="Track your token balances, LP positions and liquidity activity across EAGLEDEX pools from a single dashboard."
+        path="/portfolio"
+      />
       <SendTokenDialog open={sendOpen} onOpenChange={setSendOpen} initialToken={sendToken} />
 
       {/* Hero */}
@@ -214,7 +220,7 @@ const Portfolio = () => {
             {/* Native row with Send button */}
             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/40 transition border border-transparent hover:border-primary/30">
               <div className="flex items-center gap-3 min-w-0">
-                <img src={NATIVE_TOKEN.logo} className="w-9 h-9 rounded-full object-cover bg-secondary"/>
+                <img src={NATIVE_TOKEN.logo} alt={`${NATIVE_TOKEN.symbol} logo`} className="w-9 h-9 rounded-full object-cover bg-secondary"/>
                 <div className="min-w-0">
                   <div className="font-semibold flex items-center gap-2">{NATIVE_TOKEN.symbol} <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary">native</span></div>
                   <div className="text-[11px] text-muted-foreground truncate">{NATIVE_TOKEN.name}</div>
@@ -232,7 +238,7 @@ const Portfolio = () => {
             {balances.map(b => (
               <div key={b.addr} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/40 transition border border-transparent hover:border-primary/30">
                 <div className="flex items-center gap-3 min-w-0">
-                  {b.logo ? <img src={b.logo} className="w-9 h-9 rounded-full object-cover bg-secondary"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center font-bold text-xs">{b.sym[0]}</div>}
+                  {b.logo ? <img src={b.logo} alt={`${b.sym} logo`} className="w-9 h-9 rounded-full object-cover bg-secondary"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center font-bold text-xs">{b.sym[0]}</div>}
                   <div className="min-w-0">
                     <div className="font-semibold">{b.sym}</div>
                     <div className="text-[11px] text-muted-foreground truncate">{b.name}</div>
@@ -379,12 +385,12 @@ const Portfolio = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="flex -space-x-2">
-                      {lp.logo0 ? <img src={lp.logo0} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol0[0]}</div>}
-                      {lp.logo1 ? <img src={lp.logo1} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol1[0]}</div>}
+                      {lp.logo0 ? <img src={lp.logo0} alt={`${lp.symbol0} token`} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol0[0]}</div>}
+                      {lp.logo1 ? <img src={lp.logo1} alt={`${lp.symbol1} token`} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol1[0]}</div>}
                     </div>
                     <span className="font-bold">{lp.symbol0}/{lp.symbol1}</span>
                   </div>
-                  <a href={explorerAddr(lp.pair)} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary"><ExternalLink className="w-3.5 h-3.5"/></a>
+                  <a href={explorerAddr(lp.pair)} target="_blank" rel="noreferrer" aria-label={`View ${lp.symbol0}/${lp.symbol1} pair on block explorer`} className="text-muted-foreground hover:text-primary"><ExternalLink className="w-3.5 h-3.5"/></a>
                 </div>
                 <div className="text-center py-2 mb-3 rounded-xl bg-primary/10 border border-primary/20">
                   <div className="text-[10px] uppercase text-muted-foreground tracking-wider">Pool Share</div>

@@ -8,6 +8,7 @@ import { CONTRACTS, explorerAddr } from "@/lib/chain";
 import { FAUCET_ABI } from "@/lib/abis";
 import { getFaucet, readFaucetTokens, nextClaimAt, FaucetTokenInfo } from "@/lib/faucet";
 import { sendTx } from "@/lib/tx";
+import Seo from "@/components/Seo";
 
 const Faucet = () => {
   const { account, signer, readProvider } = useWeb3();
@@ -99,6 +100,11 @@ const Faucet = () => {
 
   return (
     <div className="max-w-5xl mx-auto animate-slide-up">
+      <Seo
+        title="Token Faucet — EAGLEDEX"
+        description="Claim free testnet tokens for EAGLEDEX on Integralayer Testnet to try swap, liquidity, farming and pool creation."
+        path="/faucet"
+      />
       {/* Hero with 3D floating drop */}
       <div className="relative overflow-hidden rounded-3xl glass border border-cyan-400/30 p-8 mb-6 bg-gradient-to-br from-cyan-500/10 via-transparent to-fuchsia-500/10">
         <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-cyan-500/20 blur-3xl animate-pulse" />

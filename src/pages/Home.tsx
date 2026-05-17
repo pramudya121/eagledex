@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeftRight, Droplets, Layers, BarChart3, Shield, Zap, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
+import Seo from "@/components/Seo";
 import TokenGlobe from "@/components/TokenGlobe";
 import { usePoolIndex, poolTVL } from "@/lib/poolIndex";
 import { useMemo } from "react";
@@ -16,6 +17,11 @@ const Home = () => {
 
   return (
     <div className="animate-slide-up">
+      <Seo
+        title="EAGLEDEX — On-chain AMM on Integralayer & ARC Testnet"
+        description="Swap tokens, provide liquidity and earn fees on EAGLEDEX, a fully on-chain Uniswap-V2-style AMM live on Integralayer and ARC testnets."
+        path="/"
+      />
       {/* HERO */}
       <section className="relative grid lg:grid-cols-2 gap-10 items-center pt-4 pb-12">
         <div className="space-y-6 relative z-10">
@@ -93,7 +99,7 @@ const Feature = ({ icon: Icon, title, desc }: { icon: any; title: string; desc: 
     <div className="w-10 h-10 rounded-xl btn-primary-grad grid place-items-center mb-3">
       <Icon className="w-5 h-5 text-primary-foreground" />
     </div>
-    <h3 className="font-bold text-lg mb-1">{title}</h3>
+    <h2 className="font-bold text-lg mb-1">{title}</h2>
     <p className="text-sm text-muted-foreground">{desc}</p>
   </div>
 );

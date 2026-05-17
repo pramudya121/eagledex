@@ -9,6 +9,14 @@ import {
 import Logo from "@/components/Logo";
 import { CONTRACTS, INTEGRALAYER, explorerAddr, TOKENS, CHAINS, getActiveChain } from "@/lib/chain";
 import { Globe } from "lucide-react";
+import Seo from "@/components/Seo";
+
+const FAQ_ITEMS: [string, string][] = [
+  ["Is EAGLEDEX custodial?", "No. All swaps and LP actions are signed from your wallet and settled on-chain. EAGLEDEX never holds your funds."],
+  ["Why does my swap revert?", "Usually because slippage was exceeded, the deadline passed, or the path has insufficient liquidity. The pre-flight panel surfaces the exact revert reason before you sign."],
+  ["How are LP fees collected?", "Every swap charges 0.30% which is added to the pool reserves. You realize the fees when you burn your LP tokens."],
+  ["How do I switch chains?", "Click the globe icon in the header next to your wallet, pick a network, and the app reloads with that chain's contracts, tokens and indexer cache. Your wallet will be prompted to add or switch to the chain automatically."],
+];
 
 /* ---------- Sidebar config (mirrors the reference layout) ---------- */
 type NavItem = { id: string; label: string; icon: any };
@@ -172,6 +180,20 @@ const Docs = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up">
+      <Seo
+        title="Documentation & FAQ — EAGLEDEX"
+        description="EAGLEDEX docs: supported networks, smart-contract addresses, integration guide, roadmap and frequently asked questions."
+        path="/docs"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQ_ITEMS.map(([q, a]) => ({
+            "@type": "Question",
+            name: q,
+            acceptedAnswer: { "@type": "Answer", text: a },
+          })),
+        }}
+      />
       <div className="grid lg:grid-cols-[260px_1fr] gap-6">
         {/* ============== SIDEBAR ============== */}
         <aside className="lg:sticky lg:top-20 self-start">

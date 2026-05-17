@@ -6,6 +6,7 @@ import { usePoolIndex, poolTVL, poolVolume } from "@/lib/poolIndex";
 import { useCloudIndex } from "@/lib/cloudIndex";
 import SyncBadge from "@/components/SyncBadge";
 import PriceChart from "@/components/PriceChart";
+import Seo from "@/components/Seo";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, Legend,
@@ -127,6 +128,11 @@ const Analytics = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <Seo
+        title="DEX Analytics — EAGLEDEX"
+        description="Real-time TVL, 24h and 7d trading volume, top pairs and DEX growth charts aggregated across all EAGLEDEX users."
+        path="/analytics"
+      />
       <div className="text-center">
         <h1 className="text-4xl font-extrabold tracking-tight"><span className="text-grad">Analytics</span></h1>
         <div className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-2 flex-wrap">
@@ -314,8 +320,8 @@ const Analytics = () => {
                 <div className="col-span-1 font-mono text-xs text-muted-foreground">{i+1}</div>
                 <div className="col-span-5 flex items-center gap-2 min-w-0">
                   <div className="flex -space-x-2 shrink-0">
-                    {p.logo0 ? <img src={p.logo0} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
-                    {p.logo1 ? <img src={p.logo1} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
+                    {p.logo0 ? <img src={p.logo0} alt={`${p.symbol0} token`} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
+                    {p.logo1 ? <img src={p.logo1} alt={`${p.symbol1} token`} className="w-6 h-6 rounded-full border border-card object-cover"/> : <div className="w-6 h-6 rounded-full bg-primary/20 border border-card"/>}
                   </div>
                   <span className="font-semibold truncate">{p.symbol0}/{p.symbol1}</span>
                 </div>

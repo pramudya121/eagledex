@@ -13,6 +13,7 @@ import { validateAmount, validateSlippageBps, validateDeadlineMinutes } from "@/
 import { poolIndex } from "@/lib/poolIndex";
 import { Loader2, Plus, Minus, Info, CheckCircle2, AlertTriangle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import Seo from "@/components/Seo";
 import { estimateContractCall, GasEstimate } from "@/lib/gas";
 import TxPreflight from "@/components/TxPreflight";
 import { usePersistedPref } from "@/lib/userPrefs";
@@ -336,6 +337,11 @@ const Liquidity = () => {
 
   return (
     <div className="max-w-xl mx-auto animate-slide-up">
+      <Seo
+        title="Add & Remove Liquidity — EAGLEDEX"
+        description="Provide liquidity to EAGLEDEX pools to earn trading fees, or remove LP positions in a single transaction."
+        path="/liquidity"
+      />
       <div className="text-center mb-6">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-2">
           <Plus className="w-7 h-7 text-primary"/> Manage <span className="text-grad">Liquidity</span>
