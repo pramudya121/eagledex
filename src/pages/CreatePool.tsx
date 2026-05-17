@@ -10,6 +10,7 @@ import { NATIVE_TOKEN, TOKENS, TokenInfo, CONTRACTS, explorerAddr } from "@/lib/
 import { ERC20_ABI, ROUTER_ABI } from "@/lib/abis";
 import { deadlineMin, getTokenBalance, isNative, parse, wrap } from "@/lib/dex";
 import { sendTx } from "@/lib/tx";
+import Seo from "@/components/Seo";
 import { poolIndex } from "@/lib/poolIndex";
 import { cloudIndex } from "@/lib/cloudIndex";
 
