@@ -211,12 +211,12 @@ const PoolCard = ({ p, cloudVol24, cloudVol7 }: { p: IndexedPool; cloudVol24?: {
     <div className="glass rounded-2xl p-5 hover:border-primary/60 transition-all hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-transparent">
       <div className="flex items-center gap-2 mb-4">
         <div className="flex -space-x-2">
-          {p.logo0 ? <img src={p.logo0} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol0[0]}</div>}
-          {p.logo1 ? <img src={p.logo1} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol1[0]}</div>}
+          {p.logo0 ? <img src={p.logo0} alt={`${p.symbol0} token logo`} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol0[0]}</div>}
+          {p.logo1 ? <img src={p.logo1} alt={`${p.symbol1} token logo`} className="w-9 h-9 rounded-full border-2 border-card object-cover"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center text-xs font-bold border-2 border-card">{p.symbol1[0]}</div>}
         </div>
         <div className="font-bold text-lg">{p.symbol0}<span className="text-muted-foreground mx-1">/</span>{p.symbol1}</div>
         {cloudVol24 && <span title="Volume 24h sourced from Cloud-indexed events" className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 border border-green-500/30 font-bold">CLOUD</span>}
-        <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="ml-auto text-muted-foreground hover:text-primary">
+        <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" aria-label={`View ${p.symbol0}/${p.symbol1} pair on block explorer`} className="ml-auto text-muted-foreground hover:text-primary">
           <ExternalLink className="w-4 h-4" />
         </a>
       </div>
