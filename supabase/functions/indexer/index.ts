@@ -84,18 +84,23 @@ Deno.serve(async (req) => {
   try {
     const head = await provider.getBlockNumber();
 
-    // Discover known pairs first (cheap) so we can compute a sane start block
-    const len = Number(await factory.allPairsLength());
-    const pairs: string[] = [];
-    for (let i = 0; i < len; i++) pairs.push((await factory.allPairs(i)).toLowerCase());
+    // Discover known pairs: use DB cache as source of truth, only fetch indices we don't have yet.
+    const { data: cachedPairsRows } = await supabase
+      .from("pairs_state").select("pair").eq("chain_id", CHAIN_ID);
+    const cachedPairs: string[] = (cachedPairsRows ?? []).map((r: any) => r.pair.toLowerCase());
+    const pairs: string[] = [...cachedPairs];
     const knownPairs = new Set(pairs);
 
-    // Earliest known created_block from DB (so cursor never skips history)
-    const { data: earliestRow } = await supabase
-      .from("pairs_state").select("created_block")
-      .eq("chain_id", CHAIN_ID).not("created_block", "is", null)
-      .order("created_block", { ascending: true }).limit(1).maybeSingle();
-    const earliest = Number(earliestRow?.created_block ?? 0);
+    const len = Number(await factory.allPairsLength());
+    if (len > cachedPairs.length) {
+      const toFetch = Math.min(len - cachedPairs.length, 5); // cap discovery per call
+      for (let i = cachedPairs.length; i < cachedPairs.length + toFetch; i++) {
+        try {
+          const a = (await factory.allPairs(i)).toLowerCase();
+          if (!knownPairs.has(a)) { pairs.push(a); knownPairs.add(a); }
+        } catch {}
+      }
+    }
 
     const { data: cur } = await supabase.from("indexer_cursor").select("last_block").eq("chain_id", CHAIN_ID).maybeSingle();
     const cursorBlock = Number(cur?.last_block ?? 0);
@@ -117,23 +122,16 @@ Deno.serve(async (req) => {
       return json({ ok: true, head, from, to, scanned: 0, message: "up to date" });
     }
 
-    // Batch-check existing pair metadata in one query; load at most MAX_META_PER_CALL missing per invocation.
-    const { data: existingMeta } = await supabase
-      .from("pairs_state").select("pair").in("pair", pairs);
-    const haveMeta = new Set((existingMeta ?? []).map((r: any) => r.pair));
-    const missing = pairs.filter(p => !haveMeta.has(p)).slice(0, MAX_META_PER_CALL);
-    for (const p of missing) await loadPairMeta(supabase, provider, p);
+    // Load metadata for at most MAX_META_PER_CALL pairs that lack it (new pairs discovered above).
+    const missingMeta = pairs.filter(p => !cachedPairs.includes(p)).slice(0, MAX_META_PER_CALL);
+    for (const p of missingMeta) await loadPairMeta(supabase, provider, p);
 
     let scanned = 0;
-    const blockTsCache = new Map<number, string>();
-    async function ts(bn: number): Promise<string> {
-      const c = blockTsCache.get(bn);
-      if (c) return c;
-      const b = await provider.getBlock(bn);
-      const iso = new Date((b?.timestamp ?? 0) * 1000).toISOString();
-      blockTsCache.set(bn, iso);
-      return iso;
-    }
+    // Approximate block timestamp from head (avoid per-block getBlock to save CPU/RPC).
+    let headTs = Math.floor(Date.now() / 1000);
+    try { const hb = await provider.getBlock(head); if (hb?.timestamp) headTs = Number(hb.timestamp); } catch {}
+    const ts = (bn: number): string =>
+      new Date((headTs - (head - bn) * ASSUMED_BLOCK_TIME) * 1000).toISOString();
 
     let lastOk = from - 1;
     try {
