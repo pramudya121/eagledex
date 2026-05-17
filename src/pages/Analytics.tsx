@@ -128,6 +128,11 @@ const Analytics = () => {
 
   return (
     <div className="max-w-7xl mx-auto animate-slide-up space-y-6">
+      <Seo
+        title="DEX Analytics — EAGLEDEX"
+        description="Real-time TVL, 24h and 7d trading volume, top pairs and DEX growth charts aggregated across all EAGLEDEX users."
+        path="/analytics"
+      />
       <div className="text-center">
         <h1 className="text-4xl font-extrabold tracking-tight"><span className="text-grad">Analytics</span></h1>
         <div className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-2 flex-wrap">
