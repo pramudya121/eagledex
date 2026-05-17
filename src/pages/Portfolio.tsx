@@ -13,6 +13,7 @@ import { useTxHistory, TxRecord } from "@/lib/txStore";
 import SyncBadge from "@/components/SyncBadge";
 import { toast } from "sonner";
 import SendTokenDialog from "@/components/SendTokenDialog";
+import Seo from "@/components/Seo";
 import TxHistoryButton from "@/components/TxHistoryButton";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
