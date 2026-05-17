@@ -13,6 +13,7 @@ import { subscribeFarmEvents, refetchPoolForUser } from "@/lib/farmEvents";
 import { sendTx } from "@/lib/tx";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import Seo from "@/components/Seo";
 import { FarmHistory } from "@/components/FarmHistory";
 import { validateAmount } from "@/lib/validate";
 
