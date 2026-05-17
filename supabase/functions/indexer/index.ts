@@ -231,7 +231,8 @@ Deno.serve(async (req) => {
       .gte("block_number", from)
       .lte("block_number", effectiveTo);
     (recent ?? []).forEach((r: any) => touched.add(r.pair));
-    for (const p of touched) await refreshPairState(supabase, provider, p);
+    const touchedArr = Array.from(touched).slice(0, 5);
+    for (const p of touchedArr) await refreshPairState(supabase, provider, p);
 
     if (effectiveTo >= from) {
       await supabase.from("indexer_cursor").upsert({ chain_id: CHAIN_ID, last_block: effectiveTo, updated_at: new Date().toISOString() });
