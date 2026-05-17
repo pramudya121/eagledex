@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeftRight, Droplets, Layers, BarChart3, Shield, Zap, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
+import Seo from "@/components/Seo";
 import TokenGlobe from "@/components/TokenGlobe";
 import { usePoolIndex, poolTVL } from "@/lib/poolIndex";
 import { useMemo } from "react";
