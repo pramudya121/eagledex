@@ -238,7 +238,7 @@ const Portfolio = () => {
             {balances.map(b => (
               <div key={b.addr} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/40 transition border border-transparent hover:border-primary/30">
                 <div className="flex items-center gap-3 min-w-0">
-                  {b.logo ? <img src={b.logo} className="w-9 h-9 rounded-full object-cover bg-secondary"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center font-bold text-xs">{b.sym[0]}</div>}
+                  {b.logo ? <img src={b.logo} alt={`${b.sym} logo`} className="w-9 h-9 rounded-full object-cover bg-secondary"/> : <div className="w-9 h-9 rounded-full bg-primary/20 grid place-items-center font-bold text-xs">{b.sym[0]}</div>}
                   <div className="min-w-0">
                     <div className="font-semibold">{b.sym}</div>
                     <div className="text-[11px] text-muted-foreground truncate">{b.name}</div>
