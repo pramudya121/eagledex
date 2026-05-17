@@ -385,12 +385,12 @@ const Portfolio = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="flex -space-x-2">
-                      {lp.logo0 ? <img src={lp.logo0} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol0[0]}</div>}
-                      {lp.logo1 ? <img src={lp.logo1} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol1[0]}</div>}
+                      {lp.logo0 ? <img src={lp.logo0} alt={`${lp.symbol0} token`} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol0[0]}</div>}
+                      {lp.logo1 ? <img src={lp.logo1} alt={`${lp.symbol1} token`} className="w-8 h-8 rounded-full border-2 border-card object-cover"/> : <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card grid place-items-center text-[10px] font-bold">{lp.symbol1[0]}</div>}
                     </div>
                     <span className="font-bold">{lp.symbol0}/{lp.symbol1}</span>
                   </div>
-                  <a href={explorerAddr(lp.pair)} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary"><ExternalLink className="w-3.5 h-3.5"/></a>
+                  <a href={explorerAddr(lp.pair)} target="_blank" rel="noreferrer" aria-label={`View ${lp.symbol0}/${lp.symbol1} pair on block explorer`} className="text-muted-foreground hover:text-primary"><ExternalLink className="w-3.5 h-3.5"/></a>
                 </div>
                 <div className="text-center py-2 mb-3 rounded-xl bg-primary/10 border border-primary/20">
                   <div className="text-[10px] uppercase text-muted-foreground tracking-wider">Pool Share</div>
