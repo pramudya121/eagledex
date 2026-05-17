@@ -143,6 +143,11 @@ const CreatePool = () => {
 
   return (
     <div className="max-w-2xl mx-auto animate-slide-up">
+      <Seo
+        title="Create New Liquidity Pool — EAGLEDEX"
+        description="Step-by-step wizard to deploy a brand-new ERC-20/ERC-20 liquidity pool on EAGLEDEX via the on-chain factory."
+        path="/create-pool"
+      />
       <div className="text-center mb-6">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-2">
           <Rocket className="w-7 h-7 text-primary" /> Create <span className="text-grad">New Pool</span>
