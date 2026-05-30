@@ -73,25 +73,10 @@ const factoryIface = new ethers.Interface(FACTORY_ABI);
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Require authenticated Supabase user (anon JWT) to prevent anonymous abuse
-  // of service-role DB writes and external RPC calls.
-  const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) {
-    return json({ ok: false, error: "Unauthorized" }, 401);
-  }
-  const token = authHeader.slice("Bearer ".length);
-  try {
-    const authClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-    );
-    const { data: userData, error: userErr } = await authClient.auth.getUser(token);
-    if (userErr || !userData?.user) {
-      return json({ ok: false, error: "Unauthorized" }, 401);
-    }
-  } catch {
-    return json({ ok: false, error: "Unauthorized" }, 401);
-  }
+  // Gateway-level JWT verification is enabled via supabase/config.toml
+  // ([functions.indexer] verify_jwt = true), which blocks anonymous external
+  // callers. The Supabase JS client automatically attaches the anon/user JWT
+  // on `supabase.functions.invoke("indexer")`.
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
