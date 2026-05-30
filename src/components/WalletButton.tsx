@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useWeb3, WALLETS, WalletId, isWalletInstalled, WC_AVAILABLE } from "@/lib/web3";
-import { INTEGRALAYER, explorerAddr } from "@/lib/chain";
+import { INTEGRALAYER, NATIVE_TOKEN, explorerAddr } from "@/lib/chain";
 import { ExternalLink, LogOut, AlertTriangle, Wallet, X, Home, Sparkles, Info } from "lucide-react";
 import { WALLET_ICON } from "./WalletIcons";
 import { toast } from "sonner";
