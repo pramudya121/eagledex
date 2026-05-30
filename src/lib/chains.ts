@@ -95,7 +95,7 @@ const ARC_WRAPPED: TokenInfo = {
 const ARC: ChainConfig = {
   key: "arc",
   chainId: 5042002,
-  chainIdHex: "0x4cefd2",
+  chainIdHex: "0x4cef52",
   name: "Arc Testnet",
   shortName: "Arc",
   rpcUrl: "https://rpc.testnet.arc.network",
