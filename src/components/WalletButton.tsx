@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useWeb3, WALLETS, WalletId, isWalletInstalled, WC_AVAILABLE } from "@/lib/web3";
-import { INTEGRALAYER, explorerAddr } from "@/lib/chain";
+import { INTEGRALAYER, NATIVE_TOKEN, explorerAddr } from "@/lib/chain";
 import { ExternalLink, LogOut, AlertTriangle, Wallet, X, Home, Sparkles, Info } from "lucide-react";
 import { WALLET_ICON } from "./WalletIcons";
 import { toast } from "sonner";
@@ -177,19 +177,19 @@ const WalletButton = () => {
         onClick={() => setMenu(v => !v)}
         variant="outline"
         size="sm"
-        title={`${Number(nativeBalance).toFixed(6)} IRL · ${account}`}
+        title={`${Number(nativeBalance).toFixed(6)} ${NATIVE_TOKEN.symbol} · ${account}`}
         className="rounded-full h-9 pl-2 pr-1 border-border bg-card/60 backdrop-blur gap-1.5"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
         <span className="font-mono text-[11px] font-bold tabular-nums text-foreground/90 hidden sm:inline">{balShort}</span>
-        <span className="text-[10px] font-bold text-muted-foreground hidden sm:inline">IRL</span>
+        <span className="text-[10px] font-bold text-muted-foreground hidden sm:inline">{NATIVE_TOKEN.symbol}</span>
         <span className="font-mono text-xs font-semibold rounded-full bg-secondary/60 px-2 py-0.5 ml-0.5">{short(account)}</span>
       </Button>
       {menu && (
         <div className="absolute right-0 top-full mt-2 w-60 glass rounded-xl p-2 z-50 animate-fade-in">
           <div className="px-3 py-2 border-b border-border/40 mb-1">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Balance</div>
-            <div className="font-mono text-sm font-bold">{Number(nativeBalance).toFixed(4)} <span className="text-muted-foreground">IRL</span></div>
+            <div className="font-mono text-sm font-bold">{Number(nativeBalance).toFixed(4)} <span className="text-muted-foreground">{NATIVE_TOKEN.symbol}</span></div>
           </div>
           <a href={explorerAddr(account)} target="_blank" rel="noreferrer"
              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary/10 text-sm">

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import TokenSelect from "@/components/TokenSelect";
 import { Input } from "@/components/ui/input";
 import { useWeb3 } from "@/lib/web3";
-import { NATIVE_TOKEN, TOKENS, TokenInfo, CONTRACTS, explorerAddr } from "@/lib/chain";
+import { NATIVE_TOKEN, TOKENS, TokenInfo, CONTRACTS, explorerAddr, INTEGRALAYER } from "@/lib/chain";
 import { ERC20_ABI, ROUTER_ABI } from "@/lib/abis";
 import { deadlineMin, getTokenBalance, isNative, parse, wrap } from "@/lib/dex";
 import { sendTx } from "@/lib/tx";
@@ -102,7 +102,7 @@ const CreatePool = () => {
   };
 
   const onDeploy = async () => {
-    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (!signer || !account || !isCorrectChain) return toast.error(`Connect to ${INTEGRALAYER.name}`);
     if (!step2Ok) return toast.error("Check token amounts");
     if (needApproveA || needApproveB) return toast.error("Approve tokens first");
 
