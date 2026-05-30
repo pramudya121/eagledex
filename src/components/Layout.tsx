@@ -23,21 +23,21 @@ const Layout = () => (
   <div className="min-h-screen flex flex-col">
     <NebulaBackground />
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/40 border-b border-border/40">
-      <div className="container mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
+      <div className="container mx-auto px-3 py-2.5 flex items-center gap-3">
         <NavLink to="/" className="shrink-0"><Logo /></NavLink>
-        <nav className="hidden lg:flex items-center gap-0.5 glass rounded-full p-1 min-w-0">
+        <nav className="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-0.5 glass rounded-full p-1 overflow-x-auto">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to}
               end={to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs xl:text-sm font-medium transition-all whitespace-nowrap ${
+                `flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                   isActive ? "btn-primary-grad text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}>
-              <Icon className="w-3.5 h-3.5 xl:w-4 xl:h-4" /> {label}
+              <Icon className="w-3.5 h-3.5" /> {label}
             </NavLink>
           ))}
         </nav>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
           <NetworkSwitcher />
           <WalletButton />
         </div>
