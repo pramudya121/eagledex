@@ -245,7 +245,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, head, from, to: effectiveTo, requestedTo: to, scanned, pairs: pairs.length });
   } catch (e: any) {
     console.error("indexer error", e);
-    return json({ ok: true, error: e?.message ?? String(e), scanned: 0 }, 200);
+    return json({ ok: true, error: "Indexer unavailable", scanned: 0 }, 200);
   }
 });
 
