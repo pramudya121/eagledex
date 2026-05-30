@@ -485,7 +485,7 @@ const Liquidity = () => {
 
             {/* Pre-flight + soft warnings */}
             {aAmt && bAmt && !validationError && !needApproveA && !needApproveB && showAdvanced && (
-              <TxPreflight est={gasEst} loading={estimating} symbol="IRL" warnings={softWarnings} />
+              <TxPreflight est={gasEst} loading={estimating} symbol={NATIVE_TOKEN.symbol} warnings={softWarnings} />
             )}
 
             {(needApproveA || needApproveB) ? (
