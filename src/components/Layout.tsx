@@ -2,7 +2,6 @@ import { NavLink, Outlet } from "react-router-dom";
 import Logo from "./Logo";
 import WalletButton from "./WalletButton";
 import NebulaBackground from "./NebulaBackground";
-import TxStatusBar from "./TxStatusBar";
 import NetworkSwitcher from "./NetworkSwitcher";
 import { getActiveChain } from "@/lib/chain";
 
@@ -24,28 +23,26 @@ const Layout = () => (
   <div className="min-h-screen flex flex-col">
     <NebulaBackground />
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/40 border-b border-border/40">
-      
       <div className="container mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
         <NavLink to="/" className="shrink-0"><Logo /></NavLink>
-        <nav className="hidden md:flex items-center gap-1 glass rounded-full p-1">
+        <nav className="hidden lg:flex items-center gap-0.5 glass rounded-full p-1 min-w-0">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to}
               end={to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs xl:text-sm font-medium transition-all whitespace-nowrap ${
                   isActive ? "btn-primary-grad text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}>
-              <Icon className="w-4 h-4" /> {label}
+              <Icon className="w-3.5 h-3.5 xl:w-4 xl:h-4" /> {label}
             </NavLink>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <NetworkSwitcher />
-          <TxStatusBar />
           <WalletButton />
         </div>
       </div>
-      <nav className="md:hidden flex overflow-x-auto gap-1 px-3 pb-3">
+      <nav className="lg:hidden flex overflow-x-auto gap-1 px-3 pb-3">
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to}
             end={to === "/"}
