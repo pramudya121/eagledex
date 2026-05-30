@@ -104,7 +104,7 @@ const Portfolio = () => {
     const items: { name: string; value: number; color: string; logo?: string }[] = [];
     const palette = ["hsl(var(--primary))","#a78bfa","#22d3ee","#f59e0b","#ec4899","#10b981","#ef4444","#6366f1"];
     const native = Number(nativeBalance);
-    if (native > 0) items.push({ name: "IRL", value: native, color: palette[0], logo: NATIVE_TOKEN.logo });
+    if (native > 0) items.push({ name: NATIVE_TOKEN.symbol, value: native, color: palette[0], logo: NATIVE_TOKEN.logo });
     balances.forEach((b, i) => {
       const v = Number(b.bal);
       if (v > 0) items.push({ name: b.sym, value: v, color: palette[(i + 1) % palette.length], logo: b.logo });
@@ -186,10 +186,10 @@ const Portfolio = () => {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={Wallet}  label="Total Portfolio Value" value={`${(Number(nativeBalance) + totalLpUnderlying).toLocaleString(undefined,{maximumFractionDigits:4})}`} sub="IRL + LP underlying" />
+        <StatCard icon={Wallet}  label="Total Portfolio Value" value={`${(Number(nativeBalance) + totalLpUnderlying).toLocaleString(undefined,{maximumFractionDigits:4})}`} sub={`${NATIVE_TOKEN.symbol} + LP underlying`} />
         <StatCard icon={Coins}   label="Tokens Held"           value={String(totalAssetsCount)} sub="non-zero balances" />
         <StatCard icon={Layers}  label="LP Positions"          value={String(lps.length)} sub="across pools" />
-        <StatCard icon={Briefcase} label="Native (IRL)"        value={Number(nativeBalance).toLocaleString(undefined,{maximumFractionDigits:4})} sub="wallet balance" />
+        <StatCard icon={Briefcase} label="`Native (${NATIVE_TOKEN.symbol})`"        value={Number(nativeBalance).toLocaleString(undefined,{maximumFractionDigits:4})} sub="wallet balance" />
       </div>
 
       {/* Account chip */}
