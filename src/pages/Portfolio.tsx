@@ -189,7 +189,7 @@ const Portfolio = () => {
         <StatCard icon={Wallet}  label="Total Portfolio Value" value={`${(Number(nativeBalance) + totalLpUnderlying).toLocaleString(undefined,{maximumFractionDigits:4})}`} sub={`${NATIVE_TOKEN.symbol} + LP underlying`} />
         <StatCard icon={Coins}   label="Tokens Held"           value={String(totalAssetsCount)} sub="non-zero balances" />
         <StatCard icon={Layers}  label="LP Positions"          value={String(lps.length)} sub="across pools" />
-        <StatCard icon={Briefcase} label="`Native (${NATIVE_TOKEN.symbol})`"        value={Number(nativeBalance).toLocaleString(undefined,{maximumFractionDigits:4})} sub="wallet balance" />
+        <StatCard icon={Briefcase} label={`Native (${NATIVE_TOKEN.symbol})`}        value={Number(nativeBalance).toLocaleString(undefined,{maximumFractionDigits:4})} sub="wallet balance" />
       </div>
 
       {/* Account chip */}
