@@ -3,7 +3,7 @@ import TokenSelect from "@/components/TokenSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWeb3 } from "@/lib/web3";
-import { NATIVE_TOKEN, TOKENS, CONTRACTS, TokenInfo } from "@/lib/chain";
+import { NATIVE_TOKEN, TOKENS, CONTRACTS, TokenInfo, INTEGRALAYER } from "@/lib/chain";
 import { ERC20_ABI, ROUTER_ABI } from "@/lib/abis";
 import { Contract, formatUnits } from "ethers";
 import { applySlippage, deadlineMin, getTokenBalance, isNative, parse, unwrapIRL, wrap, wrapIRL } from "@/lib/dex";

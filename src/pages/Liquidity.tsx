@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWeb3 } from "@/lib/web3";
-import { NATIVE_TOKEN, TOKENS, CONTRACTS, TokenInfo } from "@/lib/chain";
+import { NATIVE_TOKEN, TOKENS, CONTRACTS, TokenInfo, INTEGRALAYER } from "@/lib/chain";
 import { ERC20_ABI, PAIR_ABI, ROUTER_ABI } from "@/lib/abis";
 import { Contract, formatUnits, ZeroAddress } from "ethers";
 import { applySlippage, deadlineMin, getTokenBalance, isNative, parse, wrap } from "@/lib/dex";
