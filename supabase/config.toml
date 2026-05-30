@@ -1,1 +1,4 @@
 project_id = "yrtsxhpmfzmnfucjiqut"
+
+[functions.indexer]
+verify_jwt = true

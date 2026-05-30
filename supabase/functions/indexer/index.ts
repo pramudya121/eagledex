@@ -73,6 +73,11 @@ const factoryIface = new ethers.Interface(FACTORY_ABI);
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Gateway-level JWT verification is enabled via supabase/config.toml
+  // ([functions.indexer] verify_jwt = true), which blocks anonymous external
+  // callers. The Supabase JS client automatically attaches the anon/user JWT
+  // on `supabase.functions.invoke("indexer")`.
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -240,7 +245,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, head, from, to: effectiveTo, requestedTo: to, scanned, pairs: pairs.length });
   } catch (e: any) {
     console.error("indexer error", e);
-    return json({ ok: true, error: e?.message ?? String(e), scanned: 0 }, 200);
+    return json({ ok: true, error: "Indexer unavailable", scanned: 0 }, 200);
   }
 });
 
