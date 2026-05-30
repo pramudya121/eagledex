@@ -219,7 +219,7 @@ const Liquidity = () => {
    *  Useful when the user wants the pair to exist on-chain immediately so it
    *  shows up in Pools, before they decide on initial price/amounts. */
   const onCreatePair = async () => {
-    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (!signer || !account || !isCorrectChain) return toast.error(`Connect to ${INTEGRALAYER.name}`);
     if (pairAddr !== ZeroAddress) return toast.error("Pair already exists");
     if (isNative(a) && isNative(b)) return toast.error("Cannot pair native with native");
     setBusy(true);
@@ -240,7 +240,7 @@ const Liquidity = () => {
   };
 
   const onAdd = async () => {
-    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (!signer || !account || !isCorrectChain) return toast.error(`Connect to ${INTEGRALAYER.name}`);
     const va = validateAmount(aAmt, a.decimals, { symbol: a.symbol, max: parse(balA, a.decimals) });
     if (!va.ok) return toast.error(va.error!);
     const vb = validateAmount(bAmt, b.decimals, { symbol: b.symbol, max: parse(balB, b.decimals) });
@@ -297,7 +297,7 @@ const Liquidity = () => {
   };
 
   const onRemove = async () => {
-    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (!signer || !account || !isCorrectChain) return toast.error(`Connect to ${INTEGRALAYER.name}`);
     if (rPair === ZeroAddress || lpBal === 0n) return toast.error("No LP balance for this pair");
     if (removePct < 1 || removePct > 100) return toast.error("Remove percent must be between 1 and 100");
     const vs = validateSlippageBps(slippage); if (!vs.ok) return toast.error(vs.error!);

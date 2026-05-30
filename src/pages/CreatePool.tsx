@@ -102,7 +102,7 @@ const CreatePool = () => {
   };
 
   const onDeploy = async () => {
-    if (!signer || !account || !isCorrectChain) return toast.error("Connect to Integralayer");
+    if (!signer || !account || !isCorrectChain) return toast.error(`Connect to ${INTEGRALAYER.name}`);
     if (!step2Ok) return toast.error("Check token amounts");
     if (needApproveA || needApproveB) return toast.error("Approve tokens first");
 

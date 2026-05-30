@@ -164,7 +164,7 @@ const Swap = () => {
 
   const onSwap = async () => {
     if (!signer || !account) return toast.error("Connect wallet");
-    if (!isCorrectChain) return toast.error("Wrong network — please switch to Integralayer");
+    if (!isCorrectChain) return toast.error(`Wrong network — please switch to ${INTEGRALAYER.name}`);
 
     // Strict pre-flight validation
     const amt = validateAmount(amountIn, tokenIn.decimals, { symbol: tokenIn.symbol });
