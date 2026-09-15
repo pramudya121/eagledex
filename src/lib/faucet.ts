@@ -16,12 +16,12 @@ export type FaucetTokenInfo = {
   userLastClaimed: bigint; // unix seconds
 };
 
-/** Look up a token in the EAGLEDEX registry by address. WIRL maps to native logo/symbol. */
+/** Look up a token in the EAGLEDEX registry by address. Wrapped native maps to native logo. */
 function registryLookup(addr: string) {
   const a = addr.toLowerCase();
-  // WIRL (wrapped IRL) → display as WIRL with native IRL logo
+  // WSVP (wrapped SVP) → display with native SVP logo
   if (a === CONTRACTS.WETH.toLowerCase()) {
-    return { symbol: "WIRL", name: "Wrapped IRL", decimals: 18, logo: NATIVE_TOKEN.logo };
+    return { symbol: "WSVP", name: "Wrapped SVP", decimals: 18, logo: NATIVE_TOKEN.logo };
   }
   const t = TOKENS.find(x => x.address.toLowerCase() === a);
   return t ? { symbol: t.symbol, name: t.name, decimals: t.decimals, logo: t.logo } : null;
@@ -35,14 +35,14 @@ const meta = new Map<string, { symbol: string; name: string; decimals: number; l
 async function tokenMeta(addr: string, p: JsonRpcProvider) {
   const k = addr.toLowerCase();
   if (meta.has(k)) return meta.get(k)!;
-  // Prefer EAGLEDEX registry (gives proper logo + WIRL relabeling) before hitting RPC.
+  // Prefer EAGLEDEX registry (gives proper logo + wrapped relabeling) before hitting RPC.
   const reg = registryLookup(addr);
   if (reg) { meta.set(k, reg); return reg; }
   try {
     const c = new Contract(addr, ERC20_ABI, p);
     const [s, n, d] = await Promise.all([c.symbol(), c.name().catch(() => ""), c.decimals()]);
     const rawSym = String(s);
-    const sym = rawSym.toUpperCase() === "WETH" ? "WIRL" : rawSym;
+    const sym = rawSym.toUpperCase() === "WETH" ? "WSVP" : rawSym;
     const m = { symbol: sym, name: String(n || sym), decimals: Number(d), logo: "" };
     meta.set(k, m); return m;
   } catch {

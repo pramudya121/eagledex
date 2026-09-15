@@ -213,7 +213,7 @@ const Farming = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-2 max-w-xl">
               Stake LP or single tokens to earn rewards every block. Powered by an audited
-              MasterChef-style contract on Integralayer Testnet.
+              MasterChef-style contract on SVPChain Testnet.
             </p>
             <div className="flex items-center gap-2 mt-3 text-[11px] text-muted-foreground">
               <span className="font-mono">Farm:</span>

@@ -102,7 +102,7 @@ const Faucet = () => {
     <div className="max-w-5xl mx-auto animate-slide-up">
       <Seo
         title="Token Faucet — EAGLEDEX"
-        description="Claim free testnet tokens for EAGLEDEX on Integralayer Testnet to try swap, liquidity, farming and pool creation."
+        description="Claim free testnet tokens for EAGLEDEX on SVPChain Testnet to try swap, liquidity, farming and pool creation."
         path="/faucet"
       />
       {/* Hero with 3D floating drop */}
