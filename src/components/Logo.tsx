@@ -8,7 +8,7 @@ const Logo = ({ size = 32 }: { size?: number }) => (
       <div className="font-extrabold tracking-tight text-base">
         EAGLE<span className="text-grad">DEX</span>
       </div>
-      <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground hidden lg:block">Integralayer Testnet</div>
+      <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground hidden lg:block">SVPChain Testnet</div>
     </div>
   </div>
 );

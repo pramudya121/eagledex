@@ -1,6 +1,8 @@
 // On-chain ABIs for EAGLEDEX
 export const FACTORY_ABI = [
   "function createPair(address tokenA, address tokenB) returns (address pair)",
+  "function setFeeTo(address _feeTo)",
+  "function setFeeToSetter(address _feeToSetter)",
   "function getPair(address, address) view returns (address)",
   "function allPairs(uint256) view returns (address)",
   "function allPairsLength() view returns (uint256)",
@@ -22,9 +24,19 @@ export const ROUTER_ABI = [
   "function addLiquidityETH(address token,uint256 amountTokenDesired,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) payable returns (uint256 amountToken,uint256 amountETH,uint256 liquidity)",
   "function removeLiquidity(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint256 amountA,uint256 amountB)",
   "function removeLiquidityETH(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) returns (uint256 amountToken,uint256 amountETH)",
+  "function removeLiquidityETHSupportingFeeOnTransferTokens(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) returns (uint256 amountETH)",
+  "function removeLiquidityWithPermit(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint256 amountA,uint256 amountB)",
+  "function removeLiquidityETHWithPermit(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint256 amountToken,uint256 amountETH)",
+  "function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint256 amountETH)",
   "function swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin,address[] path,address to,uint256 deadline) returns (uint256[] amounts)",
+  "function swapTokensForExactTokens(uint256 amountOut,uint256 amountInMax,address[] path,address to,uint256 deadline) returns (uint256[] amounts)",
   "function swapExactETHForTokens(uint256 amountOutMin,address[] path,address to,uint256 deadline) payable returns (uint256[] amounts)",
+  "function swapETHForExactTokens(uint256 amountOut,address[] path,address to,uint256 deadline) payable returns (uint256[] amounts)",
   "function swapExactTokensForETH(uint256 amountIn,uint256 amountOutMin,address[] path,address to,uint256 deadline) returns (uint256[] amounts)",
+  "function swapTokensForExactETH(uint256 amountOut,uint256 amountInMax,address[] path,address to,uint256 deadline) returns (uint256[] amounts)",
+  "function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256 amountIn,uint256 amountOutMin,address[] path,address to,uint256 deadline)",
+  "function swapExactETHForTokensSupportingFeeOnTransferTokens(uint256 amountOutMin,address[] path,address to,uint256 deadline) payable",
+  "function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256 amountIn,uint256 amountOutMin,address[] path,address to,uint256 deadline)",
 ];
 
 export const ERC20_ABI = [
@@ -64,6 +76,11 @@ export const MULTICALL_ABI = [
   "function aggregate(tuple(address target, bytes callData)[] calls) returns (uint256 blockNumber, bytes[] returnData)",
   "function getEthBalance(address addr) view returns (uint256)",
   "function getCurrentBlockTimestamp() view returns (uint256)",
+  "function getBlockHash(uint256 blockNumber) view returns (bytes32)",
+  "function getLastBlockHash() view returns (bytes32)",
+  "function getCurrentBlockCoinbase() view returns (address)",
+  "function getCurrentBlockDifficulty() view returns (uint256)",
+  "function getCurrentBlockGasLimit() view returns (uint256)",
 ];
 
 // MasterChef-like farming contract on Integralayer

@@ -23,7 +23,7 @@ const Pools = () => {
   useEffect(() => { if (highlight && highlightRef.current) highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" }); }, [highlight, state.lastUpdated]);
 
   const allPools = useMemo(() => Object.values(state.pools), [state.pools, state.lastUpdated]);
-  // Only show pools whose BOTH tokens are in the registry (hides removed/legacy pairs like WIRL/MON).
+  // Only show pools whose BOTH tokens are in the registry (hides removed/legacy pairs like WSVP/MON).
   const knownAddrs = useMemo(
     () => new Set(TOKENS.filter(t => !t.isNative).map(t => t.address.toLowerCase())),
     []
@@ -140,8 +140,8 @@ const Pools = () => {
               No pools have been indexed yet. Open the Liquidity page, choose two tokens, approve them once, then add liquidity — the pair is created automatically on your first deposit.
             </p>
             <ol className="text-xs text-left max-w-md mx-auto mb-5 space-y-2">
-              <Step n={1} title="Pick two tokens" desc="Native IRL pairs use addLiquidityETH; ERC-20 pairs use addLiquidity." />
-              <Step n={2} title="Approve (once)" desc="ERC-20 tokens need router approval before they can be deposited. Native IRL skips approval." />
+              <Step n={1} title="Pick two tokens" desc="Native SVP pairs use addLiquidityETH; ERC-20 pairs use addLiquidity." />
+              <Step n={2} title="Approve (once)" desc="ERC-20 tokens need router approval before they can be deposited. Native SVP skips approval." />
               <Step n={3} title="Add liquidity" desc="The router auto-deploys the pair contract during the same tx. No 'Create pair' step." />
             </ol>
             <Link to="/liquidity" className="btn-primary-grad text-primary-foreground rounded-2xl px-6 h-12 inline-flex items-center gap-2 font-bold">

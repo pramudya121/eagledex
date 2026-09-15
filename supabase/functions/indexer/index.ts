@@ -1,5 +1,5 @@
 // EAGLEDEX persistent indexer.
-// Scans Integralayer testnet for Pair events (Swap/Mint/Burn/Sync) and
+// Scans SVPChain testnet for Pair events (Swap/Mint/Burn/Sync) and
 // Factory.PairCreated, then persists into Postgres so volume/TVL analytics
 // are accurate across users and devices.
 //
@@ -14,9 +14,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CHAIN_ID = 26218;
-const RPC = "https://testnet.integralayer.com/evm";
-const FACTORY = "0x5687FDA3BdE14d38057699c402606ab470EcA873";
+const CHAIN_ID = 2517;
+const RPC = "https://svp-dataseed1-testnet.svpchain.org";
+const FACTORY = "0x70af1341F5D5c60F913F6a21C669586C38592510";
 
 const MAX_BLOCKS_PER_CALL = 800;
 const STEP = 800;

@@ -41,7 +41,7 @@ const Swap = () => {
 
   const symbolOf = (addr: string) => TOKENS.find(t => t.address.toLowerCase() === addr.toLowerCase())?.symbol ?? addr.slice(0, 6);
 
-  // Detect wrap/unwrap mode (IRL <-> WIRL — same underlying address after wrap())
+  // Detect wrap/unwrap mode (SVP <-> WSVP — same underlying address after wrap())
   const isWrap = isNative(tokenIn) && tokenOut.address.toLowerCase() === CONTRACTS.WETH.toLowerCase();
   const isUnwrap = isNative(tokenOut) && tokenIn.address.toLowerCase() === CONTRACTS.WETH.toLowerCase();
   const isWrapMode = isWrap || isUnwrap;
@@ -181,11 +181,11 @@ const Swap = () => {
     try {
       // WRAP / UNWRAP path — direct WIRL contract, no router
       if (isWrap) {
-        await sendTx("Wrap IRL → WIRL", () => wrapIRL(signer, inAmt));
+        await sendTx("Wrap SVP → WSVP", () => wrapIRL(signer, inAmt));
         setAmountIn(""); setAmountOut(""); return;
       }
       if (isUnwrap) {
-        await sendTx("Unwrap WIRL → IRL", () => unwrapIRL(signer, inAmt));
+        await sendTx("Unwrap WSVP → SVP", () => unwrapIRL(signer, inAmt));
         setAmountIn(""); setAmountOut(""); return;
       }
 
@@ -333,7 +333,7 @@ const Swap = () => {
         {isWrapMode && amountIn && (
           <div className="mt-3 p-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs text-center flex items-center justify-center gap-1.5 animate-fade-in">
             <Repeat className="w-3.5 h-3.5" />
-            {isWrap ? "Wrapping IRL → WIRL at 1:1 (no slippage, no fee)" : "Unwrapping WIRL → IRL at 1:1 (no slippage, no fee)"}
+            {isWrap ? "Wrapping SVP → WSVP at 1:1 (no slippage, no fee)" : "Unwrapping WSVP → SVP at 1:1 (no slippage, no fee)"}
           </div>
         )}
         {!isWrapMode && price !== null && (

@@ -37,7 +37,7 @@ async function getWalletConnectProvider(): Promise<any> {
       rpcMap: { [INTEGRALAYER.chainId]: INTEGRALAYER.rpcUrl },
       metadata: {
         name: "EAGLEDEX",
-        description: "EAGLEDEX — DEX on Integralayer",
+        description: "EAGLEDEX — DEX on SVPChain",
         url: typeof window !== "undefined" ? window.location.origin : "https://eagledex.app",
         icons: [typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : ""],
       },

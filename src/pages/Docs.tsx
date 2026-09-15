@@ -71,8 +71,8 @@ const NAV: NavGroup[] = [
 type Phase = { phase: string; title: string; status: "done" | "in_progress" | "todo"; items: string[] };
 const ROADMAP: Phase[] = [
   { phase: "Phase 1", title: "Foundation — Core AMM", status: "done", items: [
-    "Deploy UniswapV2-style Factory + Router on Integralayer testnet",
-    "Native IRL ↔ WIRL wrap/unwrap",
+    "Deploy UniswapV2-style Factory + Router on SVPChain testnet",
+    "Native SVP ↔ WSVP wrap/unwrap",
     "Multi-wallet support: MetaMask, OKX, Rabby, Bitget",
     "Constant-product pools with x · y = k",
   ]},
@@ -86,7 +86,7 @@ const ROADMAP: Phase[] = [
   ]},
   { phase: "Phase 3", title: "Multi-Chain Expansion", status: "done", items: [
     "Network switcher in header — pick any supported chain on the fly",
-    "Second deployment on Arc Testnet (chainId 5042002, native USDC)",
+    "Additional network deployments",
     "Per-chain contract registry: Factory, Router, Wrapped native, Library, Multicall, Farm",
     "Per-chain token registry & per-chain indexer cache (no data mixing on switch)",
     "Wallet auto-adds the chain via wallet_addEthereumChain on first switch",
