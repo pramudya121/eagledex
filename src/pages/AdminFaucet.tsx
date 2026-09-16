@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const MAX_SLOTS = 16;
 
-// EAGLEDEX tokens that should populate the faucet (skip native IRL — faucet only handles ERC20).
+// EAGLEDEX tokens that should populate the faucet (skip the native coin — faucet only handles ERC20).
 const FAUCETABLE = TOKENS.filter(t => !t.isNative);
 
 const tokenLogoFor = (address: string): string | null => {
