@@ -69,7 +69,10 @@ const SVPCHAIN: ChainConfig = {
     LIBRARY:  "0x2Bf9ae7D36f6D057fC84d7f3165E9EB870f2e2e7",
     MULTICALL:"0xd0665e76B669af1F9EC4b4d83746b20aa81FbdCD",
     FARM:     "0x0cE4856A198484a1157D6ec19BD1bC2D97211176",
-    FAUCET:   "0x0cE4856A198484a1157D6ec19BD1bC2D97211176",
+    // NOTE: no MultiTokenFaucet deployed on SVPChain yet. The address supplied
+    // for the faucet is the MultiPoolFarm (faucet views revert on it), so the
+    // faucet pages stay in "unavailable" mode until a real faucet is provided.
+    FAUCET:   "",
   },
   nativeToken: SVP_NATIVE,
   wrappedToken: SVP_WRAPPED,
