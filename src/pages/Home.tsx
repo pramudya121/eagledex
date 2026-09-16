@@ -18,8 +18,8 @@ const Home = () => {
   return (
     <div className="animate-slide-up">
       <Seo
-        title="EAGLEDEX — On-chain AMM on Integralayer & ARC Testnet"
-        description="Swap tokens, provide liquidity and earn fees on EAGLEDEX, a fully on-chain Uniswap-V2-style AMM live on Integralayer and ARC testnets."
+        title={`EAGLEDEX — On-chain AMM on ${CHAIN.name}`}
+        description={`Swap tokens, provide liquidity and earn fees on EAGLEDEX, a fully on-chain Uniswap-V2-style AMM live on ${CHAIN.name}.`}
         path="/"
       />
       {/* HERO */}
