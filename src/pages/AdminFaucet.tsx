@@ -6,7 +6,7 @@ import {
   Coins, Send, Hash, CheckCircle2, Copy,
 } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
-import { CONTRACTS, explorerAddr, TOKENS, NATIVE_TOKEN } from "@/lib/chain";
+import { CONTRACTS, explorerAddr, TOKENS, NATIVE_TOKEN, INTEGRALAYER } from "@/lib/chain";
 import { FAUCET_ABI, ERC20_ABI } from "@/lib/abis";
 import { getFaucet, readFaucetTokens, FaucetTokenInfo } from "@/lib/faucet";
 import { sendTx } from "@/lib/tx";
