@@ -39,7 +39,7 @@ const Home = () => {
             <span className="text-grad">on-chain</span> tokens.
           </h1>
           <p className="text-sm md:text-base text-muted-foreground max-w-lg">
-            EAGLEDEX is a fully on-chain AMM built on {CHAIN.shortName}. Swap, provide liquidity, and earn fees with
+            EAGLEDEX is a fully on-chain AMM built on {CHAIN.name}. Swap, provide liquidity, and earn fees with
             transparent routing, real-time pool analytics, and a sleek pitch-black UI.
           </p>
           <div className="flex flex-wrap gap-3">
