@@ -4,6 +4,7 @@ import Logo from "@/components/Logo";
 import Seo from "@/components/Seo";
 import TokenGlobe from "@/components/TokenGlobe";
 import { usePoolIndex, poolTVL } from "@/lib/poolIndex";
+import { INTEGRALAYER as CHAIN } from "@/lib/chain";
 import { useMemo } from "react";
 
 const Home = () => {
