@@ -108,7 +108,7 @@ const AdminFaucet = () => {
             <span className="bg-gradient-to-r from-cyan-300 to-fuchsia-400 bg-clip-text text-transparent">Token Faucet</span>
           </h1>
         </div>
-        <p className="text-xs text-muted-foreground">Claim free test tokens to use across EAGLEDEX on Integralayer Testnet.</p>
+        <p className="text-xs text-muted-foreground">Claim free test tokens to use across EAGLEDEX on {INTEGRALAYER.name}.</p>
       </div>
 
       {/* Stat strip */}
