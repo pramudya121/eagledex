@@ -6,6 +6,7 @@
 // concurrent invocations safe.
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { INTEGRALAYER } from "@/lib/chain";
 
 export interface CloudPairVolume {
   pair: string;
