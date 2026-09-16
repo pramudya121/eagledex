@@ -31,8 +31,8 @@ const Home = () => {
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span className="text-grad">Live on Integralayer Testnet</span>
-            <span className="text-muted-foreground">· Chain 26218</span>
+            <span className="text-grad">Live on {CHAIN.name}</span>
+            <span className="text-muted-foreground">· Chain {CHAIN.chainId}</span>
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1]">
             Trade the universe of <br />
