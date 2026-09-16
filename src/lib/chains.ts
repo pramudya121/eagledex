@@ -4,7 +4,8 @@
 // Active chain is persisted in localStorage and applied at module-load via
 // src/lib/chain.ts (page reloads on switch).
 
-import svpLogo from "@/assets/irl-token.jpg";
+import svpAsset from "@/assets/svp-token.jpg.asset.json";
+const svpLogo = svpAsset.url;
 import egdxLogo from "@/assets/eagle-logo.png";
 
 const cmc = (id: number) => `https://s2.coinmarketcap.com/static/img/coins/64x64/${id}.png`;
