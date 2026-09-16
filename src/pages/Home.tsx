@@ -4,6 +4,7 @@ import Logo from "@/components/Logo";
 import Seo from "@/components/Seo";
 import TokenGlobe from "@/components/TokenGlobe";
 import { usePoolIndex, poolTVL } from "@/lib/poolIndex";
+import { INTEGRALAYER as CHAIN } from "@/lib/chain";
 import { useMemo } from "react";
 
 const Home = () => {
@@ -18,8 +19,8 @@ const Home = () => {
   return (
     <div className="animate-slide-up">
       <Seo
-        title="EAGLEDEX — On-chain AMM on Integralayer & ARC Testnet"
-        description="Swap tokens, provide liquidity and earn fees on EAGLEDEX, a fully on-chain Uniswap-V2-style AMM live on Integralayer and ARC testnets."
+        title={`EAGLEDEX — On-chain AMM on ${CHAIN.name}`}
+        description={`Swap tokens, provide liquidity and earn fees on EAGLEDEX, a fully on-chain Uniswap-V2-style AMM live on ${CHAIN.name}.`}
         path="/"
       />
       {/* HERO */}
@@ -30,15 +31,15 @@ const Home = () => {
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span className="text-grad">Live on Integralayer Testnet</span>
-            <span className="text-muted-foreground">· Chain 26218</span>
+            <span className="text-grad">Live on {CHAIN.name}</span>
+            <span className="text-muted-foreground">· Chain {CHAIN.chainId}</span>
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1]">
             Trade the universe of <br />
             <span className="text-grad">on-chain</span> tokens.
           </h1>
           <p className="text-sm md:text-base text-muted-foreground max-w-lg">
-            EAGLEDEX is a fully on-chain AMM built on Integralayer. Swap, provide liquidity, and earn fees with
+            EAGLEDEX is a fully on-chain AMM built on {CHAIN.name}. Swap, provide liquidity, and earn fees with
             transparent routing, real-time pool analytics, and a sleek pitch-black UI.
           </p>
           <div className="flex flex-wrap gap-3">

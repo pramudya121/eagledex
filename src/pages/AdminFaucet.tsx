@@ -6,7 +6,7 @@ import {
   Coins, Send, Hash, CheckCircle2, Copy,
 } from "lucide-react";
 import { useWeb3 } from "@/lib/web3";
-import { CONTRACTS, explorerAddr, TOKENS, NATIVE_TOKEN } from "@/lib/chain";
+import { CONTRACTS, explorerAddr, TOKENS, NATIVE_TOKEN, INTEGRALAYER } from "@/lib/chain";
 import { FAUCET_ABI, ERC20_ABI } from "@/lib/abis";
 import { getFaucet, readFaucetTokens, FaucetTokenInfo } from "@/lib/faucet";
 import { sendTx } from "@/lib/tx";
@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const MAX_SLOTS = 16;
 
-// EAGLEDEX tokens that should populate the faucet (skip native IRL — faucet only handles ERC20).
+// EAGLEDEX tokens that should populate the faucet (skip the native coin — faucet only handles ERC20).
 const FAUCETABLE = TOKENS.filter(t => !t.isNative);
 
 const tokenLogoFor = (address: string): string | null => {
@@ -108,7 +108,7 @@ const AdminFaucet = () => {
             <span className="bg-gradient-to-r from-cyan-300 to-fuchsia-400 bg-clip-text text-transparent">Token Faucet</span>
           </h1>
         </div>
-        <p className="text-xs text-muted-foreground">Claim free test tokens to use across EAGLEDEX on Integralayer Testnet.</p>
+        <p className="text-xs text-muted-foreground">Claim free test tokens to use across EAGLEDEX on {INTEGRALAYER.name}.</p>
       </div>
 
       {/* Stat strip */}

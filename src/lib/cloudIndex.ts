@@ -6,6 +6,7 @@
 // concurrent invocations safe.
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { INTEGRALAYER } from "@/lib/chain";
 
 export interface CloudPairVolume {
   pair: string;
@@ -53,7 +54,7 @@ export async function refreshCloud() {
       supabase.from("pair_volume_24h").select("*"),
       supabase.from("pair_volume_7d").select("*"),
       supabase.from("pairs_state").select("*"),
-      supabase.from("indexer_cursor").select("last_block").eq("chain_id", 26218).maybeSingle(),
+      supabase.from("indexer_cursor").select("last_block").eq("chain_id", INTEGRALAYER.chainId).maybeSingle(),
     ]);
     state.volume24h = {};
     (v24.data ?? []).forEach((r: any) => {
