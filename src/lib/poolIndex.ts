@@ -340,24 +340,30 @@ async function scanLogs(fromBlock: number, toBlock: number) {
   }
 }
 
+// Public RPCs cap the [from,to] span (SVPChain: 10_000). Always chunk.
+const LOG_SPAN = 9_000;
+
 async function scanFactory(fromBlock: number, toBlock: number) {
   if (!provider || !factory) return;
-  try {
-    const logs = await provider.getLogs({
-      address: CONTRACTS.FACTORY,
-      fromBlock, toBlock,
-      topics: [TOPIC_PAIR_CREATED],
-    });
-    for (const log of logs) {
-      try {
-        const parsed = factoryIface.parseLog({ topics: log.topics as string[], data: log.data });
-        if (!parsed) continue;
-        const pair = parsed.args[2] as string;
-        if (!state.pools[pair.toLowerCase()]?.token0) await coldLoadPair(pair);
-      } catch {}
+  for (let from = fromBlock; from <= toBlock; from += LOG_SPAN + 1) {
+    const to = Math.min(toBlock, from + LOG_SPAN);
+    try {
+      const logs = await provider.getLogs({
+        address: CONTRACTS.FACTORY,
+        fromBlock: from, toBlock: to,
+        topics: [TOPIC_PAIR_CREATED],
+      });
+      for (const log of logs) {
+        try {
+          const parsed = factoryIface.parseLog({ topics: log.topics as string[], data: log.data });
+          if (!parsed) continue;
+          const pair = parsed.args[2] as string;
+          if (!state.pools[pair.toLowerCase()]?.token0) await coldLoadPair(pair);
+        } catch {}
+      }
+    } catch (e) {
+      console.warn("indexer: scanFactory chunk failed", from, to, e);
     }
-  } catch (e) {
-    console.warn("indexer: scanFactory failed", e);
   }
 }
 
