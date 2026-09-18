@@ -5,17 +5,17 @@ import { INTEGRALAYER } from "@/lib/chain";
 
 /**
  * Persistent banner shown at the top of the app whenever the user is connected
- * but on a chain other than Integralayer. Provides a single one-click switch.
+ * but on a chain other than the active EAGLEDEX chain. Provides a single one-click switch.
  */
 const ChainBanner = () => {
-  const { account, isCorrectChain, chainId, switchToIntegralayer } = useWeb3();
+  const { account, isCorrectChain, chainId, switchNetwork } = useWeb3();
   const [busy, setBusy] = useState(false);
 
   if (!account || isCorrectChain) return null;
 
   const onSwitch = async () => {
     setBusy(true);
-    try { await switchToIntegralayer(); } finally { setBusy(false); }
+    try { await switchNetwork(); } finally { setBusy(false); }
   };
 
   return (

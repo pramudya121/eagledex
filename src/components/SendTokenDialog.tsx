@@ -19,7 +19,7 @@ interface Props {
 }
 
 const SendTokenDialog = ({ open, onOpenChange, initialToken, onSent }: Props) => {
-  const { account, signer, readProvider, nativeBalance, refreshBalance, ensureChain, isCorrectChain, switchToIntegralayer } = useWeb3();
+  const { account, signer, readProvider, nativeBalance, refreshBalance, ensureChain, isCorrectChain, switchNetwork } = useWeb3();
   const [token, setToken] = useState<TokenInfo>(initialToken ?? NATIVE_TOKEN);
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
@@ -119,7 +119,7 @@ const SendTokenDialog = ({ open, onOpenChange, initialToken, onSent }: Props) =>
               <div className="font-semibold text-destructive">Wrong network</div>
               <div className="text-muted-foreground">Switch to {INTEGRALAYER.name} (chainId {INTEGRALAYER.chainId}).</div>
             </div>
-            <Button size="sm" variant="destructive" onClick={() => switchToIntegralayer()}>Switch</Button>
+            <Button size="sm" variant="destructive" onClick={() => switchNetwork()}>Switch</Button>
           </div>
         )}
 

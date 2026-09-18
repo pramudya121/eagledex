@@ -10,7 +10,7 @@ import { toast } from "sonner";
 const short = (a: string) => `${a.slice(0,6)}…${a.slice(-4)}`;
 
 const WalletButton = () => {
-  const { account, connect, disconnect, isCorrectChain, switchToIntegralayer, nativeBalance } = useWeb3();
+  const { account, connect, disconnect, isCorrectChain, switchNetwork, nativeBalance } = useWeb3();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
 
@@ -19,9 +19,9 @@ const WalletButton = () => {
   // transitions from null → string after connect.
   useEffect(() => {
     if (account && !isCorrectChain) {
-      switchToIntegralayer().catch(() => {});
+      switchNetwork().catch(() => {});
     }
-  }, [account, isCorrectChain, switchToIntegralayer]);
+  }, [account, isCorrectChain, switchNetwork]);
 
   const onPick = async (id: WalletId) => {
     if (id === "walletconnect" && !WC_AVAILABLE) {
