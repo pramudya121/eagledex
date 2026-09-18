@@ -130,12 +130,12 @@ interface Web3Ctx {
   router: Contract;
   connect: (id: WalletId) => Promise<void>;
   disconnect: () => void;
-  switchToIntegralayer: () => Promise<void>;
+  switchNetwork: () => Promise<void>;
   isCorrectChain: boolean;
   nativeBalance: string;
   refreshBalance: () => Promise<void>;
   walletId: WalletId | null;
-  /** Throws a clear Error if the wallet isn't on Integralayer after attempting an auto-switch. */
+  /** Throws a clear Error if the wallet isn't on the active chain after attempting an auto-switch. */
   ensureChain: () => Promise<void>;
 }
 
@@ -163,7 +163,7 @@ const fallbackCtx: Web3Ctx = {
   router: new Contract(CONTRACTS.ROUTER, ROUTER_ABI, fallbackReadProvider),
   connect: noopConnect,
   disconnect: noopDisconnect,
-  switchToIntegralayer: noopSwitch,
+  switchNetwork: noopSwitch,
   isCorrectChain: false,
   nativeBalance: "0",
   refreshBalance: noopRefresh,
@@ -197,7 +197,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refreshBalance(); }, [refreshBalance, chainId]);
 
-  const switchToIntegralayer = useCallback(async () => {
+  const switchNetwork = useCallback(async () => {
     let eth: any = null;
     if (walletId === "walletconnect") {
       eth = _wcProvider;
@@ -235,7 +235,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     let net = await provider.getNetwork();
     if (Number(net.chainId) === INTEGRALAYER.chainId) return;
     try {
-      await switchToIntegralayer();
+      await switchNetwork();
     } catch (e: any) {
       const msg = e?.shortMessage || e?.message || String(e);
       throw new Error(
@@ -250,7 +250,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       );
     }
     setChainId(INTEGRALAYER.chainId);
-  }, [provider, signer, switchToIntegralayer]);
+  }, [provider, signer, switchNetwork]);
 
   // Expose ensureChain to non-React modules (lib/tx.ts uses it)
   useEffect(() => {
@@ -298,7 +298,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       localStorage.setItem("eagledex:wallet", id);
 
       if (Number(net.chainId) !== INTEGRALAYER.chainId) {
-        try { await switchToIntegralayer(); } catch {}
+        try { await switchNetwork(); } catch {}
       }
 
       eth.on?.("accountsChanged", (a: string[]) => setAccount(a[0] ?? null));
@@ -311,7 +311,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     } catch (e: any) {
       toast.error("Connection failed", { description: e?.message ?? String(e) });
     }
-  }, [switchToIntegralayer]);
+  }, [switchNetwork]);
 
   const disconnect = useCallback(async () => {
     if (walletId === "walletconnect" && _wcProvider) {
@@ -332,7 +332,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{
       isReady: true,
       account, chainId, provider, signer, readProvider, factory, router,
-      connect, disconnect, switchToIntegralayer, isCorrectChain, nativeBalance, refreshBalance, walletId, ensureChain,
+      connect, disconnect, switchNetwork, isCorrectChain, nativeBalance, refreshBalance, walletId, ensureChain,
     }}>
       {children}
     </Ctx.Provider>
