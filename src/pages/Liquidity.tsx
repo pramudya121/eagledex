@@ -349,7 +349,7 @@ const Liquidity = () => {
         <p className="text-sm text-muted-foreground mt-1">Earn fees by providing tokens to pools</p>
       </div>
 
-      <Tabs defaultValue="add" className="w-full">
+      <Tabs defaultValue="add" className="w-full neon-scope">
         <TabsList className="grid grid-cols-2 w-full glass rounded-2xl p-1 h-auto">
           <TabsTrigger value="add" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2"><Plus className="w-4 h-4 mr-1.5"/>Add</TabsTrigger>
           <TabsTrigger value="remove" className="rounded-xl data-[state=active]:btn-primary-grad data-[state=active]:text-primary-foreground py-2"><Minus className="w-4 h-4 mr-1.5"/>Remove</TabsTrigger>

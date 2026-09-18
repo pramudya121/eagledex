@@ -248,8 +248,8 @@ const Swap = () => {
       </div>
 
       {/* Premium gradient ring around the swap surface */}
-      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-br from-primary/60 via-primary/10 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.45)]">
-        <div className="form-surface p-5 relative rounded-[calc(1.5rem-1.5px)]">
+      <div className="neon-scope relative rounded-[2.2rem] p-[1.5px] bg-gradient-to-br from-primary/70 via-primary/20 to-transparent shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.5)]">
+        <div className="form-surface p-5 relative">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-muted-foreground">Trade</span>
