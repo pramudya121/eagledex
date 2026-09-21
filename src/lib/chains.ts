@@ -37,6 +37,12 @@ export type ChainConfig = {
     MULTICALL: string;
     FARM: string;
     FAUCET: string;       // optional, "" if none
+    // Launchpad suite (optional per chain — "" disables the launchpad UI)
+    LAUNCHPAD_FACTORY: string;
+    FEE_MANAGER: string;
+    ANTIBOT: string;
+    REFERRAL: string;
+    LP_LOCKER: string;
   };
   nativeToken: TokenInfo;
   wrappedToken: TokenInfo;
