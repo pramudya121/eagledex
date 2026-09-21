@@ -32,6 +32,69 @@ export type Database = {
         }
         Relationships: []
       }
+      launch_tokens: {
+        Row: {
+          chain_id: number
+          created_at: string
+          creator: string
+          curve_address: string | null
+          decimals: number
+          description: string | null
+          id: string
+          logo_path: string | null
+          name: string
+          symbol: string
+          telegram: string | null
+          token_address: string
+          total_supply: number | null
+          twitter: string | null
+          tx_hash: string | null
+          verified: boolean
+          views: number
+          website: string | null
+        }
+        Insert: {
+          chain_id: number
+          created_at?: string
+          creator: string
+          curve_address?: string | null
+          decimals?: number
+          description?: string | null
+          id?: string
+          logo_path?: string | null
+          name: string
+          symbol: string
+          telegram?: string | null
+          token_address: string
+          total_supply?: number | null
+          twitter?: string | null
+          tx_hash?: string | null
+          verified?: boolean
+          views?: number
+          website?: string | null
+        }
+        Update: {
+          chain_id?: number
+          created_at?: string
+          creator?: string
+          curve_address?: string | null
+          decimals?: number
+          description?: string | null
+          id?: string
+          logo_path?: string | null
+          name?: string
+          symbol?: string
+          telegram?: string | null
+          token_address?: string
+          total_supply?: number | null
+          twitter?: string | null
+          tx_hash?: string | null
+          verified?: boolean
+          views?: number
+          website?: string | null
+        }
+        Relationships: []
+      }
       pair_events: {
         Row: {
           amount0: number | null
@@ -149,6 +212,69 @@ export type Database = {
           token1?: string
           total_supply?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      token_favorites: {
+        Row: {
+          chain_id: number
+          created_at: string
+          id: string
+          token_address: string
+          wallet: string
+        }
+        Insert: {
+          chain_id: number
+          created_at?: string
+          id?: string
+          token_address: string
+          wallet: string
+        }
+        Update: {
+          chain_id?: number
+          created_at?: string
+          id?: string
+          token_address?: string
+          wallet?: string
+        }
+        Relationships: []
+      }
+      token_trades: {
+        Row: {
+          amount: number
+          chain_id: number
+          created_at: string
+          eth_amount: number | null
+          id: string
+          price: number
+          side: string
+          token_address: string
+          trader: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          amount: number
+          chain_id: number
+          created_at?: string
+          eth_amount?: number | null
+          id?: string
+          price: number
+          side: string
+          token_address: string
+          trader?: string | null
+          tx_hash?: string | null
+        }
+        Update: {
+          amount?: number
+          chain_id?: number
+          created_at?: string
+          eth_amount?: number | null
+          id?: string
+          price?: number
+          side?: string
+          token_address?: string
+          trader?: string | null
+          tx_hash?: string | null
         }
         Relationships: []
       }
