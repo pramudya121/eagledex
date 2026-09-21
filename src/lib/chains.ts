@@ -79,6 +79,11 @@ const SVPCHAIN: ChainConfig = {
     // for the faucet is the MultiPoolFarm (faucet views revert on it), so the
     // faucet pages stay in "unavailable" mode until a real faucet is provided.
     FAUCET:   "",
+    LAUNCHPAD_FACTORY: "0x60Cd538B3F4FF116cCAcaB79cd9B9fB686f73079",
+    FEE_MANAGER:       "0x55a1F05ed52147584C6C428cE5c5376a0f195bD5",
+    ANTIBOT:           "0x99d32D633110cc39643CCd456c656e9D1D7C5DcF",
+    REFERRAL:          "0xe6353577CB0789E6a581CeB67D41Daa44CdAeB26",
+    LP_LOCKER:         "0x81D92759c19F81F21c4B3a9A140C5141aC6873f8",
   },
   nativeToken: SVP_NATIVE,
   wrappedToken: SVP_WRAPPED,
