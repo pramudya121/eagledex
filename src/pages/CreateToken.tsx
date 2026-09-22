@@ -12,7 +12,7 @@ import {
 } from "@/lib/launchpad";
 
 const CreateToken = () => {
-  const { account, signer, readProvider, connect } = useWeb3();
+  const { account, signer, readProvider } = useWeb3();
   const nav = useNavigate();
   const [fee, setFee] = useState<bigint>(0n);
   const [busy, setBusy] = useState(false);
@@ -34,7 +34,7 @@ const CreateToken = () => {
   };
 
   const submit = async () => {
-    if (!account || !signer) { connect(); return; }
+    if (!account || !signer) { toast.error("Connect your wallet first"); return; }
     const name = f.name.trim(), symbol = f.symbol.trim().toUpperCase();
     if (name.length < 2) { toast.error("Name is required"); return; }
     if (symbol.length < 2 || symbol.length > 12) { toast.error("Symbol must be 2–12 characters"); return; }
