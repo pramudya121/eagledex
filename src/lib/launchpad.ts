@@ -211,3 +211,22 @@ export async function readCreationFee(p: JsonRpcProvider): Promise<bigint> {
   const f = getLaunchFactory(p);
   return (await tryCall(() => f.creationFee() as Promise<bigint>)) ?? 0n;
 }
+
+/* ---------------- Favorites ---------------- */
+
+export async function listFavorites(wallet: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("token_favorites").select("token_address")
+    .eq("chain_id", CHAIN_ID).ilike("wallet", wallet);
+  return ((data ?? []) as { token_address: string }[]).map(r => r.token_address.toLowerCase());
+}
+
+export async function toggleFavorite(wallet: string, token: string, on: boolean) {
+  const t = token.toLowerCase(), w = wallet.toLowerCase();
+  if (on) {
+    await supabase.from("token_favorites").insert({ chain_id: CHAIN_ID, token_address: t, wallet: w } as never);
+  } else {
+    await supabase.from("token_favorites").delete()
+      .eq("chain_id", CHAIN_ID).ilike("token_address", t).ilike("wallet", w);
+  }
+}
