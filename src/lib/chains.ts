@@ -1,12 +1,11 @@
-// Chain registry for EAGLEDEX.
-// Currently deployed on SVPChain Testnet. Add another entry here and it
+// Chain registry for QuantaX.
+// Currently deployed on QMS Testnet. Add another entry here and it
 // instantly becomes selectable from the network switcher in the header.
 // Active chain is persisted in localStorage and applied at module-load via
 // src/lib/chain.ts (page reloads on switch).
 
-import svpAsset from "@/assets/svp-token.jpg.asset.json";
-const svpLogo = svpAsset.url;
-import egdxLogo from "@/assets/eagle-logo.png";
+import qmsLogo from "@/assets/qms-token.png";
+import qtxLogo from "@/assets/qtx-token.png";
 
 const cmc = (id: number) => `https://s2.coinmarketcap.com/static/img/coins/64x64/${id}.png`;
 
@@ -49,62 +48,61 @@ export type ChainConfig = {
   tokens: TokenInfo[];    // includes native + wrapped + erc20s
 };
 
-// ---------- SVPChain Testnet ----------
-const SVP_NATIVE: TokenInfo = {
-  address: "NATIVE", symbol: "SVP", name: "SVPChain", decimals: 18, logo: svpLogo, isNative: true,
+// ---------- QMS Testnet ----------
+const QMS_NATIVE: TokenInfo = {
+  address: "NATIVE", symbol: "QMS", name: "QMS", decimals: 18, logo: qmsLogo, isNative: true,
 };
-const SVP_WRAPPED: TokenInfo = {
-  address: "0x771a0a63D8198b7dbea4a16910ff68AB38006531",
-  symbol: "WSVP", name: "Wrapped SVP", decimals: 18, logo: svpLogo,
+const QMS_WRAPPED: TokenInfo = {
+  address: "0x9AA510295aC664A3d5A3182a3eFe959DE2B12c34",
+  symbol: "WQMS", name: "Wrapped QMS", decimals: 18, logo: qmsLogo,
 };
 
-const SVPCHAIN: ChainConfig = {
-  key: "svpchain",
-  chainId: 2517,
-  chainIdHex: "0x9d5",
-  name: "SVPChain Testnet",
-  shortName: "SVPChain",
-  rpcUrl: "https://svp-dataseed1-testnet.svpchain.org",
-  explorer: "https://explorer.svpchain.com",
-  symbol: "SVP",
+const QMS_CHAIN: ChainConfig = {
+  key: "qms",
+  chainId: 19480,
+  chainIdHex: "0x4c18",
+  name: "QMS Testnet",
+  shortName: "QMS",
+  rpcUrl: "https://rpc.testnet.qms.finance",
+  explorer: "https://testnet.qmsscan.io",
+  symbol: "QMS",
   decimals: 18,
   contracts: {
-    FACTORY:  "0x70af1341F5D5c60F913F6a21C669586C38592510",
-    ROUTER:   "0x68F2458954032952d2ddd5D8Ee1d671e6E93Ae6C",
-    WETH:     "0x771a0a63D8198b7dbea4a16910ff68AB38006531",
-    LIBRARY:  "0x2Bf9ae7D36f6D057fC84d7f3165E9EB870f2e2e7",
-    MULTICALL:"0xd0665e76B669af1F9EC4b4d83746b20aa81FbdCD",
-    FARM:     "0x0cE4856A198484a1157D6ec19BD1bC2D97211176",
-    // NOTE: no MultiTokenFaucet deployed on SVPChain yet. The address supplied
-    // for the faucet is the MultiPoolFarm (faucet views revert on it), so the
-    // faucet pages stay in "unavailable" mode until a real faucet is provided.
+    FACTORY:  "0x97C305119f5D98aFd11bCD19a1ba8c27d68F3546",
+    ROUTER:   "0x3A153e8BcDe02F4Cf6C5eeECD9c83bC0296FFbD3",
+    WETH:     "0x9AA510295aC664A3d5A3182a3eFe959DE2B12c34",
+    LIBRARY:  "0x03D2D542100fa926de135a08B609c8538E45F6ee",
+    MULTICALL:"0x8705875084c72C0cDC01c1Ac36A807808c8E5850",
+    FARM:     "0xA5A90E43Df65AD62E45Edc526A1FD147cdDea6c8",
+    // NOTE: no faucet contract deployed on QMS Testnet yet — the faucet
+    // pages stay in "unavailable" mode until a real faucet is provided.
     FAUCET:   "",
-    LAUNCHPAD_FACTORY: "0x60Cd538B3F4FF116cCAcaB79cd9B9fB686f73079",
-    FEE_MANAGER:       "0x55a1F05ed52147584C6C428cE5c5376a0f195bD5",
-    ANTIBOT:           "0x99d32D633110cc39643CCd456c656e9D1D7C5DcF",
-    REFERRAL:          "0xe6353577CB0789E6a581CeB67D41Daa44CdAeB26",
-    LP_LOCKER:         "0x81D92759c19F81F21c4B3a9A140C5141aC6873f8",
+    // Launchpad suite not deployed on QMS Testnet yet.
+    LAUNCHPAD_FACTORY: "",
+    FEE_MANAGER:       "",
+    ANTIBOT:           "",
+    REFERRAL:          "",
+    LP_LOCKER:         "",
   },
-  nativeToken: SVP_NATIVE,
-  wrappedToken: SVP_WRAPPED,
+  nativeToken: QMS_NATIVE,
+  wrappedToken: QMS_WRAPPED,
   tokens: [
-    SVP_NATIVE,
-    SVP_WRAPPED,
-    { address: "0xA6E7648E5e16b8d6187180489b0CbC48E2140E48", symbol: "HYPE", name: "Hyperliquid", decimals: 18, logo: cmc(32196) },
-    { address: "0x1b3D9Cd8C7f2551361d4bd0c80960c3eE7D0683E", symbol: "ETH",  name: "Ethereum",    decimals: 18, logo: cmc(1027) },
-    { address: "0x5FE8080b3eA5207425Cc59aB219Cf0024523D7E5", symbol: "BNB",  name: "BNB",         decimals: 18, logo: cmc(1839) },
-    { address: "0x69fF4F880E03aA02cA551F4F98A183A8c09fF940", symbol: "UNI",  name: "Uniswap",     decimals: 18, logo: cmc(7083) },
-    { address: "0x6d950f88E6939808c0dEAe5b28Db3de4E3731f0C", symbol: "XRP",  name: "XRP",         decimals: 18, logo: cmc(52) },
-    { address: "0xfD290E1e7DAc27EcaaA4A93fbB66cD0f00b2e073", symbol: "EGDX", name: "EagleDex",    decimals: 18, logo: egdxLogo },
+    QMS_NATIVE,
+    QMS_WRAPPED,
+    { address: "0x7b277d0387ccDFC395Eae0EFe2321765afAb37c8", symbol: "BNB",  name: "BNB",        decimals: 18, logo: cmc(1839) },
+    { address: "0x0177E73214265D1d6f29a273155803Af5Bf47cFa", symbol: "ETH",  name: "Ethereum",   decimals: 18, logo: cmc(1027) },
+    { address: "0x05466944d61662225ad19916725975230bb5b2B7", symbol: "MON",  name: "MON",        decimals: 18, logo: "" },
+    { address: "0x1C9FAFD0A5803d51EB2BEb9D54304cAe574734CF", symbol: "HYPE", name: "Hyperliquid",decimals: 18, logo: cmc(32196) },
+    { address: "0x66E5cbb0325Ab93B42c16592Be91456cc195E427", symbol: "QTX",  name: "QuantaX",    decimals: 18, logo: qtxLogo },
   ],
 };
 
-export const CHAINS: ChainConfig[] = [SVPCHAIN];
+export const CHAINS: ChainConfig[] = [QMS_CHAIN];
 export const CHAINS_BY_KEY: Record<string, ChainConfig> = Object.fromEntries(CHAINS.map(c => [c.key, c]));
 export const CHAINS_BY_ID: Record<number, ChainConfig> = Object.fromEntries(CHAINS.map(c => [c.chainId, c]));
 
 const ACTIVE_KEY = "eagledex:activeChain";
-const DEFAULT_KEY = "svpchain";
+const DEFAULT_KEY = "qms";
 
 export function getActiveChainKey(): string {
   if (typeof localStorage === "undefined") return DEFAULT_KEY;
@@ -113,7 +111,7 @@ export function getActiveChainKey(): string {
 }
 
 export function getActiveChain(): ChainConfig {
-  return CHAINS_BY_KEY[getActiveChainKey()] ?? SVPCHAIN;
+  return CHAINS_BY_KEY[getActiveChainKey()] ?? QMS_CHAIN;
 }
 
 /** Persist & reload — many modules read chain config at module-load. */
