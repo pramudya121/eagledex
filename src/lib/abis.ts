@@ -1,4 +1,5 @@
-// On-chain ABIs for EAGLEDEX
+// On-chain ABIs for QuantaX (QMS Testnet)
+
 export const FACTORY_ABI = [
   "function createPair(address tokenA, address tokenB) returns (address pair)",
   "function setFeeTo(address _feeTo)",
@@ -12,6 +13,7 @@ export const FACTORY_ABI = [
   "event PairCreated(address indexed token0, address indexed token1, address pair, uint256)",
 ];
 
+// UniswapV2Router02 — 0x3A153e8BcDe02F4Cf6C5eeECD9c83bC0296FFbD3
 export const ROUTER_ABI = [
   "function factory() view returns (address)",
   "function WETH() view returns (address)",
@@ -52,6 +54,7 @@ export const ERC20_ABI = [
   "event Approval(address indexed owner, address indexed spender, uint256 value)",
 ];
 
+// WQMS (wrapped native QMS) — 0x9AA510295aC664A3d5A3182a3eFe959DE2B12c34
 export const WETH_ABI = [
   ...ERC20_ABI,
   "function deposit() payable",
@@ -72,6 +75,7 @@ export const PAIR_ABI = [
   "event Sync(uint112 reserve0, uint112 reserve1)",
 ];
 
+// Multicall — 0x8705875084c72C0cDC01c1Ac36A807808c8E5850
 export const MULTICALL_ABI = [
   "function aggregate(tuple(address target, bytes callData)[] calls) returns (uint256 blockNumber, bytes[] returnData)",
   "function getEthBalance(address addr) view returns (uint256)",
@@ -83,30 +87,38 @@ export const MULTICALL_ABI = [
   "function getCurrentBlockGasLimit() view returns (uint256)",
 ];
 
-// MasterChef-like farming contract on Integralayer
+// MasterChef-style farming contract on QMS Testnet — 0xA5A90E43Df65AD62E45Edc526A1FD147cdDea6c8
+// Global emissions: rewardPerBlock() + rewardToken(); each pool has allocPoint.
 export const FARM_ABI = [
   "function owner() view returns (address)",
-  "function poolInfo(uint256) view returns (address stakingToken, address rewardToken, uint256 lastRewardBlock, uint256 accRewardPerShare, uint256 rewardPerBlock, uint256 totalStaked)",
+  "function poolLength() view returns (uint256)",
+  "function poolInfo(uint256) view returns (address lpToken, uint256 allocPoint, uint256 lastRewardBlock, uint256 accRewardPerShare)",
   "function userInfo(uint256, address) view returns (uint256 amount, uint256 rewardDebt)",
   "function pendingReward(uint256 _pid, address _user) view returns (uint256)",
+  "function rewardPerBlock() view returns (uint256)",
+  "function rewardToken() view returns (address)",
+  "function startBlock() view returns (uint256)",
+  "function totalAllocPoint() view returns (uint256)",
+  "function getMultiplier(uint256 _from, uint256 _to) pure returns (uint256)",
+  "function add(uint256 _allocPoint, address _lpToken, bool _withUpdate)",
+  "function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate)",
+  "function setRewardPerBlock(uint256 _rewardPerBlock)",
+  "function setRewardToken(address _rewardToken)",
   "function deposit(uint256 _pid, uint256 _amount)",
   "function withdraw(uint256 _pid, uint256 _amount)",
   "function emergencyWithdraw(uint256 _pid)",
   "function massUpdatePools()",
   "function updatePool(uint256 _pid)",
-  "function addPool(address _stakingToken, address _rewardToken, uint256 _rewardPerBlock)",
-  "function updateRewardPerBlock(uint256 _pid, uint256 _rewardPerBlock)",
   "function transferOwnership(address newOwner)",
   "event Deposit(address indexed user, uint256 indexed pid, uint256 amount)",
   "event Withdraw(address indexed user, uint256 indexed pid, uint256 amount)",
   "event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount)",
-  "event RewardPaid(address indexed user, uint256 indexed pid, uint256 amount)",
-  "event PoolAdded(uint256 indexed pid, address stakingToken, address rewardToken, uint256 rewardPerBlock)",
-  "event RewardPerBlockUpdated(uint256 indexed pid, uint256 rewardPerBlock)",
-  "event OwnershipTransferred(address indexed prevOwner, address indexed newOwner)",
+  "event RewardPerBlockUpdated(uint256 newRewardPerBlock)",
+  "event RewardTokenUpdated(address indexed newRewardToken)",
+  "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
 ];
 
-// Multi-token Faucet contract
+// Multi-token Faucet contract (kept for future use — no faucet deployed on QMS yet)
 export const FAUCET_ABI = [
   "function adminWithdraw(uint8 tokenIndex, uint256 amount, address to)",
   "function claim(uint8 tokenIndex)",
